@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Urban Bites</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      line-height: 1.6;
+    }
+
+    header {
+      padding: 20px;
+      text-align: center;
+      background: #1c1c1c;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin: 10px;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 80px 20px;
+      background: linear-gradient(135deg, #ff512f, #dd2476);
+    }
+
+    .hero h1 {
+      font-size: 42px;
+      margin-bottom: 10px;
+    }
+
+    .btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 12px 22px;
+      background: white;
+      color: #dd2476;
+      border-radius: 25px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    section {
+      padding: 50px 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .menu {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: #222;
+      padding: 25px;
+      border-radius: 15px;
+      text-align: center;
+    }
+
+    .price {
+      color: #ff512f;
+      font-weight: bold;
+      font-size: 20px;
+    }
+
+    #cart {
+      text-align: center;
+      margin-top: 25px;
+      font-size: 20px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 25px;
+      background: #1c1c1c;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h2>🍔 Urban Bites</h2>
+
+  <nav>
+    <a href="#home">Home</a>
+    <a href="#menu">Menu</a>
+    <a href="#about">About</a>
+  </nav>
+</header>
+
+<section class="hero" id="home">
+  <h1>Fresh. Fast. Delicious.</h1>
+  <p>Best food in your neighbourhood.</p>
+
+  <a class="btn" href="#menu">View Menu</a>
+</section>
+
+<section id="menu">
+
+  <h2>Our Menu</h2>
+
+  <div class="menu">
+
+    <div class="card">
+      <h3>🍔 Classic Burger</h3>
+      <p>Cheese, vegetables & special sauce.</p>
+      <p class="price">₹149</p>
+      <button onclick="addToCart(149)">Add</button>
+    </div>
+
+    <div class="card">
+      <h3>🍕 Cheese Pizza</h3>
+      <p>Loaded with delicious cheese.</p>
+      <p class="price">₹249</p>
+      <button onclick="addToCart(249)">Add</button>
+    </div>
+
+    <div class="card">
+      <h3>🍟 French Fries</h3>
+      <p>Crispy golden fries.</p>
+      <p class="price">₹99</p>
+      <button onclick="addToCart(99)">Add</button>
+    </div>
+
+  </div>
+
+  <div id="cart">
+    🛒 Cart: <span id="count">0</span>
+    <br>
+    Total: ₹<span id="total">0</span>
+  </div>
+
+</section>
+
+<section id="about">
+
+  <h2>About Us</h2>
+
+  <p>
+    Urban Bites serves fresh and tasty food made with quality ingredients.
+    Visit us or order your favourite food today!
+  </p>
+
+</section>
+
+<footer>
+
+  <p>© 2026 Urban Bites</p>
+
+  <a
+    class="btn"
+    href="https://wa.me/919999999999?text=Hello%20Urban%20Bites"
+    target="_blank">
+    Order on WhatsApp
+  </a>
+
+</footer>
+
+<script>
+
+let count = 0;
+let total = 0;
+
+function addToCart(price) {
+
+  count++;
+  total += price;
+
+  document.getElementById("count").textContent = count;
+  document.getElementById("total").textContent = total;
+
+  alert("Item added to cart!");
+
+}
+
+</script>
+
+</body>
+</html>
