@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+*.sqlite
+*.sqlite-*
+cookies.txt
+server.backup.js
+server.js.before-*
+
+*.sqlite.before-*
+
+public/*.before-*

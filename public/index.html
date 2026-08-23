@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Polytechnic Student Hub</title>
+
+    <link rel="stylesheet" href="style.css">
+
+<style>
+
+#recordDialog{
+    width:min(600px,calc(100% - 24px));
+    max-height:calc(100vh - 24px);
+    margin:auto;
+    padding:0;
+    border:0;
+    background:transparent;
+}
+
+#recordDialog::backdrop{
+    background:rgba(8,13,28,.65);
+    backdrop-filter:blur(8px);
+}
+
+.record-box{
+    position:relative;
+    padding:35px;
+    background:linear-gradient(145deg,#fff,#f8f9ff);
+    border:1px solid #e3e7f3;
+    border-radius:25px;
+    box-shadow:0 30px 80px rgba(35,48,95,.2);
+}
+
+.record-box h2{
+    text-align:center;
+    margin:8px 0;
+}
+
+.record-subtitle{
+    text-align:center;
+    color:#7b8497;
+    margin-bottom:25px;
+}
+
+.record-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+}
+
+.record-item{
+    padding:15px;
+    border:1px solid #e3e7f3;
+    border-radius:14px;
+    background:#fff;
+}
+
+.record-item span{
+    display:block;
+    color:#737d91;
+    font-size:12px;
+    margin-bottom:6px;
+}
+
+.record-item strong{
+    display:block;
+    word-break:break-word;
+}
+
+.record-full{
+    grid-column:1 / -1;
+}
+
+@media(max-width:600px){
+    .record-grid{
+        grid-template-columns:1fr;
+    }
+
+    .record-full{
+        grid-column:auto;
+    }
+
+    .record-box{
+        padding:25px 18px;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="logo">
+
+        <div class="logo-icon">
+            PH
+        </div>
+
+        <div>
+            <h2>Polytechnic Hub</h2>
+            <span>Learn • Grow • Achieve</span>
+        </div>
+
+    </div>
+
+
+    <nav id="mainNav">
+
+        <a href="#home">Home</a>
+
+        <a href="#study">Study Hub</a>
+
+        <a href="#updates">Updates</a>
+
+        <a href="#career">Career</a>
+
+        <a href="#feedback">Feedback</a>
+
+        <button
+            id="myRecordsBtn"
+            type="button">
+            👤 My Records
+        </button>
+
+        <button
+            id="recordNavBtn"
+            type="button"
+            style="display:none;">
+            👤 Mera Record
+        </button>
+
+        <button
+            id="loginBtn"
+            type="button">
+            Login
+        </button>
+
+    </nav>
+
+
+    <!-- MOBILE MENU -->
+
+    <button
+        id="menuBtn"
+        class="menu-btn"
+        type="button"
+        aria-label="Open navigation">
+
+        ☰
+
+    </button>
+
+</header>
+        <h1>
+            Study smarter.<br>
+            <span>Build your future.</span>
+        </h1>
+
+        <p>
+            Notes, books, previous papers, model papers,
+            exam updates, internships and career guidance —
+            everything organized for Polytechnic students.
+        </p>
+
+        <div class="hero-buttons">
+
+            <a href="#study" class="btn primary">
+                Explore Study Material
+            </a>
+
+            <button class="btn secondary" id="profileBtn">
+                👤 My Records
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div class="welcome-card">
+
+        <div class="card-icon">✨</div>
+
+        <span>Your Dashboard</span>
+
+        <h2 id="welcomeMessage">
+            Welcome, Student! 👋
+        </h2>
+
+        <p id="studentInfo">
+            Create your profile and personalize
+            your learning journey.
+        </p>
+
+        <button class="small-btn" id="personalizeBtn">
+            Personalize Dashboard
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- STUDY -->
+
+<section class="section" id="study">
+
+    <div class="section-title">
+
+        <span>📚 STUDY ZONE</span>
+
+        <h2>
+            Everything you need to study
+        </h2>
+
+        <p>
+            Organized branch, year and semester wise.
+        </p>
+
+    </div>
+
+
+    <div class="feature-grid">
+
+        <div class="feature-card">
+            <div class="feature-icon">📚</div>
+            <h3>Notes & Books</h3>
+            <p>
+                Semester-wise notes and recommended books.
+            </p>
+        </div>
+
+
+        <div class="feature-card">
+            <div class="feature-icon">📝</div>
+            <h3>Previous Papers</h3>
+            <p>
+                Previous year papers for better preparation.
+            </p>
+        </div>
+
+
+        <div class="feature-card">
+            <div class="feature-icon">📄</div>
+            <h3>Model Papers</h3>
+            <p>
+                Practice model papers before examinations.
+            </p>
+        </div>
+
+
+        <div class="feature-card">
+            <div class="feature-icon">⭐</div>
+            <h3>Important Questions</h3>
+            <p>
+                Important topics and questions for revision.
+            </p>
+        </div>
+
+
+        <div class="feature-card">
+            <div class="feature-icon">📖</div>
+            <h3>Syllabus</h3>
+            <p>
+                Branch and semester-wise syllabus.
+            </p>
+        </div>
+
+
+        <div class="feature-card">
+            <div class="feature-icon">🧪</div>
+            <h3>Practical & Viva</h3>
+            <p>
+                Practical preparation and viva guidance.
+            </p>
+        </div>
+
+    </div>
+
+
+    <!-- LIVE STUDY CONTENT -->
+
+    <div id="liveStudyContent" style="margin-top:30px;">
+
+        <h3>📚 Available Subjects</h3>
+
+        <div
+            id="publicSubjects"
+            class="feature-grid">
+        </div>
+
+
+        <h3 style="margin-top:30px;">
+            📖 Study Materials
+        </h3>
+
+        <div
+            id="publicMaterials"
+            class="feature-grid">
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- UPDATES -->
+
+<section class="section updates-section" id="updates">
+
+    <div class="section-title">
+
+        <span>🔔 IMPORTANT UPDATES</span>
+
+        <h2>
+            Stay updated
+        </h2>
+
+    </div>
+
+
+    <div class="updates" id="publicUpdates">
+
+        <div class="update-card">
+
+            <div class="update-tag exam">
+                EXAM
+            </div>
+
+            <div>
+                <h3>
+                    Exam Timetable & Forms
+                </h3>
+
+                <p>
+                    Official examination dates and
+                    form-related updates.
+                </p>
+            </div>
+
+        </div>
+
+
+        <div class="update-card">
+
+            <div class="update-tag notice">
+                NOTICE
+            </div>
+
+            <div>
+                <h3>
+                    BTER / College Notices
+                </h3>
+
+                <p>
+                    Important official announcements
+                    in one place.
+                </p>
+            </div>
+
+        </div>
+
+
+        <div class="update-card">
+
+            <div class="update-tag date">
+                DATE
+            </div>
+
+            <div>
+                <h3>
+                    Important Academic Dates
+                </h3>
+
+                <p>
+                    Tests, practicals, forms and
+                    other important deadlines.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- CAREER -->
+
+<section class="section career-section" id="career">
+
+    <div class="section-title">
+
+        <span>🚀 BEYOND THE SEMESTER</span>
+
+        <h2>
+            Career & Opportunities
+        </h2>
+
+        <p>
+            Your diploma is the beginning, not the end.
+        </p>
+
+    </div>
+
+
+    <div class="career-grid" id="publicCareer">
+
+        <div class="career-card">
+            <span>💼</span>
+            <h3>Internships</h3>
+            <p>
+                Find internships and learn
+                what skills companies need.
+            </p>
+        </div>
+
+
+        <div class="career-card">
+            <span>🏭</span>
+            <h3>Jobs</h3>
+            <p>
+                Explore private and technical
+                job opportunities.
+            </p>
+        </div>
+
+
+        <div class="career-card">
+            <span>🎓</span>
+            <h3>Higher Studies</h3>
+            <p>
+                Explore B.Tech and other
+                higher education options.
+            </p>
+        </div>
+
+
+        <div class="career-card">
+            <span>🧭</span>
+            <h3>Other Exams</h3>
+            <p>
+                Relevant government and
+                technical examination opportunities.
+            </p>
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- GOAL -->
+
+<section class="goal-section">
+
+    <span>🎯 MAKE IT PERSONAL</span>
+
+    <h2>
+        What is your goal?
+    </h2>
+
+    <p>
+        Choose your direction and we'll
+        personalize your future dashboard.
+    </p>
+
+
+    <div class="goal-buttons">
+
+        <button>🏛️ Government Job</button>
+
+        <button>🏭 Private Job</button>
+
+        <button>🎓 B.Tech</button>
+
+        <button>💻 IT / Software</button>
+
+        <button>🚀 Business</button>
+
+    </div>
+
+</section>
+
+
+<!-- FEEDBACK -->
+
+<section class="section" id="feedback">
+
+    <div class="section-title">
+
+        <span>💡 YOUR VOICE MATTERS</span>
+
+        <h2>
+            Help us make this better
+        </h2>
+
+        <p>
+            Tell us what Polytechnic students actually need.
+        </p>
+
+    </div>
+
+
+    <form id="feedbackForm" class="feedback-form">
+
+        <div class="form-row">
+
+            <input
+                name="college"
+                placeholder="College (optional)"
+            >
+
+            <input
+                name="branch"
+                placeholder="Branch"
+            >
+
+        </div>
+
+
+        <div class="form-row">
+
+            <select name="year">
+
+                <option value="">
+                    Select Year
+                </option>
+
+                <option>1st Year</option>
+                <option>2nd Year</option>
+                <option>3rd Year</option>
+
+            </select>
+
+
+            <select name="semester">
+
+                <option value="">
+                    Select Semester
+                </option>
+
+                <option>1st Semester</option>
+                <option>2nd Semester</option>
+                <option>3rd Semester</option>
+                <option>4th Semester</option>
+                <option>5th Semester</option>
+                <option>6th Semester</option>
+
+            </select>
+
+        </div>
+
+
+        <input
+            name="used"
+            placeholder="What did you use? Notes, PYQ, Career..."
+        >
+
+
+        <textarea
+            name="suggestion"
+            placeholder="What should we add or improve?"
+            rows="5"
+        ></textarea>
+
+
+        <button class="btn primary">
+            Send Feedback ❤️
+        </button>
+
+    </form>
+
+</section>
+
+</main>
+
+
+<footer>
+
+<footer class="site-footer">
+
+    <div class="footer-container">
+
+        <!-- BRAND -->
+
+        <div class="footer-brand">
+
+            <div class="footer-logo">
+                <div class="logo-icon">PH</div>
+
+                <div>
+                    <h3>Polytechnic Student Hub</h3>
+                    <span>Learn • Grow • Achieve</span>
+                </div>
+            </div>
+
+            <p>
+                A student-focused platform for Polytechnic
+                study material, exam updates, career guidance
+                and opportunities.
+            </p>
+
+        </div>
+
+
+        <!-- QUICK LINKS -->
+
+        <div class="footer-column">
+
+            <h4>Quick Links</h4>
+
+            <a href="#home">🏠 Home</a>
+            <a href="#study">📚 Study Hub</a>
+            <a href="#updates">🔔 Updates</a>
+            <a href="#career">🚀 Career</a>
+            <a href="#feedback">💡 Feedback</a>
+
+        </div>
+
+
+        <!-- CONTACT -->
+
+        <div class="footer-column">
+
+            <h4>Contact Developer</h4>
+
+            <div class="developer-name">
+                👨‍💻 <strong>Ashish</strong>
+            </div>
+
+            <p class="developer-role">
+                Coding Developer
+            </p>
+
+            <a href="mailto:smtp5225@gmail.com">
+                📧 smtp5225@gmail.com
+            </a>
+
+            <a href="tel:+919352017536">
+                📞 9352017536
+            </a>
+
+            <a
+                href="https://wa.me/919352017536"
+                target="_blank"
+                rel="noopener"
+            >
+                💬 WhatsApp
+            </a>
+
+        </div>
+
+
+        <!-- LOCATION / GITHUB -->
+
+        <div class="footer-column">
+
+            <h4>Developer Info</h4>
+
+            <p>
+                📍 Nadbai, Bharatpur
+            </p>
+
+            <a
+                href="https://github.com/smtp5225-bit"
+                target="_blank"
+                rel="noopener"
+            >
+                🐙 GitHub
+            </a>
+
+            <p class="footer-note">
+                Built with ❤️ for Polytechnic students.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="footer-bottom">
+
+        <span>
+            © 2026 Polytechnic Student Hub
+        </span>
+
+        <span>
+            Designed & Developed by Ashish 👨‍💻
+        </span>
+
+    </div>
+
+</footer>
+</footer>
+
+
+
+<!-- ================= MY RECORD ================= -->
+
+<dialog id="recordDialog">
+
+    <div class="record-box">
+
+        <button
+            type="button"
+            class="close"
+            id="closeRecordDialog"
+            aria-label="Close">
+            ×
+        </button>
+
+        <div class="auth-icon">
+            👤
+        </div>
+
+        <span class="auth-label">
+            POLYTECHNIC STUDENT HUB
+        </span>
+
+        <h2>My Record</h2>
+
+        <p class="record-subtitle">
+            Your personal academic profile
+        </p>
+
+        <div class="record-grid">
+
+            <div class="record-item">
+                <span>👤 Name</span>
+                <strong id="recordName">—</strong>
+            </div>
+
+            <div class="record-item">
+                <span>📧 Email</span>
+                <strong id="recordEmail">—</strong>
+            </div>
+
+            <div class="record-item">
+                <span>🏫 College</span>
+                <strong id="recordCollege">—</strong>
+            </div>
+
+            <div class="record-item">
+                <span>💻 Branch</span>
+                <strong id="recordBranch">—</strong>
+            </div>
+
+            <div class="record-item">
+                <span>📅 Year</span>
+                <strong id="recordYear">—</strong>
+            </div>
+
+            <div class="record-item">
+                <span>📚 Semester</span>
+                <strong id="recordSemester">—</strong>
+            </div>
+
+            <div class="record-item record-full">
+                <span>🎯 Career Goal</span>
+                <strong id="recordGoal">—</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+</dialog>
+
+
+<!-- MY RECORDS POPUP -->
+
+<dialog id="myRecordsDialog">
+
+    <div class="auth-box">
+
+        <button
+            type="button"
+            class="close"
+            id="closeMyRecords">
+            ×
+        </button>
+
+        <div class="auth-icon">👤</div>
+
+        <span class="auth-label">
+            POLYTECHNIC STUDENT HUB
+        </span>
+
+        <h2>My Records</h2>
+
+        <p>Your personal student profile</p>
+
+        <div id="myRecordsContent"></div>
+
+    </div>
+
+</dialog>
+
+
+<!-- PROFILE POPUP -->
+
+<dialog id="profileDialog">
+
+<div class="auth-box">
+
+<button type="button" class="close" id="closeDialog">×</button>
+
+<div class="auth-icon">🎓</div>
+
+<span class="auth-label">POLYTECHNIC STUDENT HUB</span>
+
+<h2 id="authTitle">Create your account</h2>
+
+<p id="authSubtitle">
+Start your personalized Polytechnic journey.
+</p>
+
+
+<!-- SIGNUP -->
+
+<form id="signupForm">
+
+<input
+id="signupName"
+placeholder="Full name"
+required
+>
+
+<input
+id="signupEmail"
+type="email"
+placeholder="Email address (optional)"
+>
+
+<input
+id="signupPhone"
+type="tel"
+placeholder="10-digit mobile number"
+inputmode="numeric"
+maxlength="10"
+pattern="[6-9][0-9]{9}"
+title="Enter a valid 10-digit Indian mobile number"
+required
+>
+
+<small>
+Enter a valid 10-digit mobile number.
+</small>
+
+<input
+id="signupPassword"
+type="password"
+placeholder="Create password (min 6 characters)"
+minlength="6"
+required
+>
+
+<input
+id="signupCollege"
+placeholder="College name"
+required
+>
+
+<select id="signupBranch" required>
+
+<option value="">Select Branch</option>
+
+<option>Computer Engineering</option>
+<option>Information Technology</option>
+<option>Electronics Engineering</option>
+<option>Electrical Engineering</option>
+<option>Mechanical Engineering</option>
+<option>Civil Engineering</option>
+<option>Automobile Engineering</option>
+<option>Mechatronics Engineering</option>
+<option>Instrumentation Engineering</option>
+<option>Production Engineering</option>
+<option>Architecture Assistantship</option>
+<option>Fashion Design</option>
+<option>Plastic Engineering</option>
+<option>Mining Engineering</option>
+<option>Chemical Engineering</option>
+<option>Other Polytechnic Branch</option>
+
+</select>
+
+<div class="form-row">
+
+<select id="signupYear" required>
+
+<option value="">Select Year</option>
+
+<option>1st Year</option>
+<option>2nd Year</option>
+<option>3rd Year</option>
+
+</select>
+
+<select id="signupSemester" required>
+
+<option value="">Semester</option>
+
+<option>1st Semester</option>
+<option>2nd Semester</option>
+<option>3rd Semester</option>
+<option>4th Semester</option>
+<option>5th Semester</option>
+<option>6th Semester</option>
+
+</select>
+
+</div>
+
+<select id="signupGoal" required>
+
+<option value="">Select Goal</option>
+<option>Not decided yet</option>
+<option>Government Job</option>
+<option>Private Job</option>
+<option>B.Tech</option>
+<option>IT / Software</option>
+<option>Business</option>
+
+</select>
+
+<button
+type="submit"
+class="btn primary auth-submit">
+Create Account 🚀
+</button>
+
+</form>
+
+
+<!-- LOGIN -->
+
+<form id="loginForm" style="display:none">
+
+<input
+id="loginIdentifier"
+type="text"
+placeholder="Email or phone number"
+required
+>
+
+<input
+id="loginPassword"
+type="password"
+placeholder="Password"
+required
+>
+
+<button
+type="submit"
+class="btn primary auth-submit">
+Login 👋
+</button>
+
+<button
+type="button"
+id="forgotPasswordBtn"
+class="auth-switch">
+Forgot Password?
+</button>
+
+</form>
+
+
+<!-- FORGOT PASSWORD -->
+
+<form id="forgotForm" style="display:none">
+
+<input
+id="forgotIdentifier"
+type="text"
+placeholder="Email or phone number"
+required
+>
+
+<button
+type="submit"
+class="btn primary auth-submit">
+Send OTP 🔐
+</button>
+
+</form>
+
+
+<!-- OTP -->
+
+<form id="otpForm" style="display:none">
+
+<input
+id="otpInput"
+type="text"
+inputmode="numeric"
+maxlength="6"
+placeholder="Enter 6-digit OTP"
+required
+>
+
+<button
+type="submit"
+class="btn primary auth-submit">
+Verify OTP
+</button>
+
+</form>
+
+
+<!-- NEW PASSWORD -->
+
+<form id="resetForm" style="display:none">
+
+<input
+id="newPassword"
+type="password"
+placeholder="New password"
+minlength="6"
+required
+>
+
+<input
+id="confirmPassword"
+type="password"
+placeholder="Confirm new password"
+minlength="6"
+required
+>
+
+<button
+type="submit"
+class="btn primary auth-submit">
+Change Password 🔑
+</button>
+
+</form>
+
+
+<p id="authMessage"></p>
+
+
+<button
+type="button"
+id="switchAuth"
+class="auth-switch">
+
+Already have an account? Login
+
+</button>
+
+</div>
+
+</dialog>
+
+<script src="app.js"></script>
+
+</body>
+</html>

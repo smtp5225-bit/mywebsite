@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin Dashboard | Polytechnic Student Hub</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#f4f6fb;
+    color:#172033
+}
+header{
+    background:#111827;
+    color:white;
+    padding:18px 6%;
+    display:flex;
+    justify-content:space-between;
+    align-items:center
+}
+header h1{margin:0;font-size:21px}
+button{
+    border:0;
+    border-radius:10px;
+    padding:10px 15px;
+    cursor:pointer;
+    font-weight:700
+}
+.logout{background:#ef4444;color:white}
+.container{
+    width:min(1200px,92%);
+    margin:25px auto
+}
+.login,.dashboard{
+    background:white;
+    padding:25px;
+    border-radius:18px;
+    box-shadow:0 8px 30px #00000012
+}
+input,textarea,select{
+    width:100%;
+    padding:12px;
+    margin:7px 0;
+    border:1px solid #d9deea;
+    border-radius:10px;
+    font-size:15px
+}
+textarea{min-height:90px}
+.primary{
+    background:#5268ee;
+    color:white
+}
+.hidden{display:none}
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+    gap:18px;
+    margin:20px 0
+}
+.card{
+    background:#f8f9ff;
+    padding:20px;
+    border-radius:15px;
+    border:1px solid #e5e8f2
+}
+.card h3{margin-top:0}
+.section{
+    margin-top:25px;
+    border-top:1px solid #e5e8f2;
+    padding-top:20px
+}
+.item{
+    padding:14px;
+    background:#f8f9ff;
+    margin:8px 0;
+    border-radius:12px;
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+    align-items:center
+}
+.danger{
+    background:#ef4444;
+    color:white
+}
+.small{color:#697386;font-size:13px}
+#message{margin:12px 0;font-weight:700}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🎓 Polytechnic Student Hub — Admin</h1>
+    <button class="logout" onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+
+<section id="loginBox" class="login">
+    <h2>🔐 Admin Login</h2>
+
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+
+    <button class="primary" onclick="login()">Login</button>
+
+    <div id="message"></div>
+</section>
+
+
+<section id="dashboard" class="dashboard hidden">
+
+    <h2>📊 Admin Dashboard</h2>
+
+    <div class="grid">
+        <div class="card">
+            <h3>📚 Subjects</h3>
+            <strong id="subjectCount">0</strong>
+        </div>
+
+        <div class="card">
+            <h3>📖 Materials</h3>
+            <strong id="materialCount">0</strong>
+        </div>
+
+        <div class="card">
+            <h3>🔔 Updates</h3>
+            <strong id="updateCount">0</strong>
+        </div>
+
+        <div class="card">
+            <h3>🚀 Career</h3>
+            <strong id="careerCount">0</strong>
+        </div>
+    </div>
+
+
+    <!-- SUBJECTS -->
+
+    <div class="section">
+        <h2>📚 Manage Subjects</h2>
+
+        <input id="subjectName" placeholder="Subject name">
+        <input id="subjectBranch" placeholder="Branch">
+        <input id="subjectSemester" placeholder="Semester">
+
+        <button class="primary" onclick="addSubject()">
+            + Add Subject
+        </button>
+
+        <div id="subjectsList"></div>
+    </div>
+
+
+    <!-- MATERIAL -->
+
+    <div class="section">
+        <h2>📖 Manage Study Material</h2>
+
+        <input id="materialTitle" placeholder="Material title">
+        <input id="materialSubject" placeholder="Subject">
+        <input id="materialBranch" placeholder="Branch">
+        <input id="materialSemester" placeholder="Semester">
+        <input id="materialUrl" placeholder="PDF / Resource URL">
+
+        <button class="primary" onclick="addMaterial()">
+            + Add Material
+        </button>
+
+        <div id="materialsList"></div>
+    </div>
+
+
+    <!-- UPDATES -->
+
+    <div class="section">
+        <h2>🔔 Manage Updates</h2>
+
+        <input id="updateTitle" placeholder="Update title">
+        <textarea id="updateDescription"
+            placeholder="Description"></textarea>
+
+        <input id="updateType" placeholder="Type">
+
+        <label>
+            <input id="updateImportant" type="checkbox"
+                style="width:auto">
+            Important
+        </label>
+
+        <br>
+
+        <button class="primary" onclick="addUpdate()">
+            + Add Update
+        </button>
+
+        <div id="updatesList"></div>
+    </div>
+
+
+    <!-- CAREER -->
+
+
+    <!-- STUDENTS -->
+
+    <div class="section">
+
+        <h2>👥 All Student Records</h2>
+
+        <input
+            id="studentSearch"
+            type="text"
+            placeholder="🔎 Search name, email, college or branch"
+            oninput="filterStudents()"
+            onkeydown="if(event.key==='Enter') event.preventDefault()"
+        >
+
+        <div id="studentsList">
+            Loading students...
+        </div>
+
+    </div>
+
+
+    <!-- FEEDBACK -->
+
+    <div class="section">
+
+        <h2>💬 Student Feedback</h2>
+
+        <div id="feedbackList">
+            Loading feedback...
+        </div>
+
+    </div>
+
+
+    <div class="section">
+        <h2>🚀 Manage Career Posts</h2>
+
+        <input id="careerTitle" placeholder="Career title">
+        <textarea id="careerDescription"
+            placeholder="Description"></textarea>
+
+        <input id="careerCompany" placeholder="Company">
+        <input id="careerLocation" placeholder="Location">
+        <input id="careerType" placeholder="Type">
+        <input id="careerUrl" placeholder="Apply URL">
+
+        <button class="primary" onclick="addCareer()">
+            + Add Career Post
+        </button>
+
+        <div id="careerList"></div>
+    </div>
+
+</section>
+
+</div>
+
+
+<script>
+
+async function login(){
+
+    const username =
+        document.getElementById("username").value;
+
+    const password =
+        document.getElementById("password").value;
+
+    const res = await fetch("/api/admin/login",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        credentials:"include",
+        body:JSON.stringify({
+            username,
+            password
+        })
+    });
+
+    const data = await res.json();
+
+    document.getElementById("message").textContent =
+        data.message;
+
+    if(data.success){
+
+        document
+        .getElementById("loginBox")
+        .classList.add("hidden");
+
+        document
+        .getElementById("dashboard")
+        .classList.remove("hidden");
+
+        await loadAll();
+        await loadStudents();
+        await loadFeedback();
+
+    }
+}
+
+
+function logout(){
+
+    location.reload();
+
+}
+
+
+async function api(url,options={}){
+
+    options.credentials="include";
+
+    const res = await fetch(url,options);
+
+    return await res.json();
+
+}
+
+
+async function loadAll(){
+
+    const [
+        subjects,
+        materials,
+        updates,
+        career
+    ] = await Promise.all([
+
+        api("/api/subjects"),
+        api("/api/materials"),
+        api("/api/updates"),
+        api("/api/career")
+
+    ]);
+
+    renderSubjects(subjects);
+    renderMaterials(materials);
+    renderUpdates(updates);
+    renderCareer(career);
+}
+
+
+/* SUBJECTS */
+
+async function addSubject(){
+
+    const data = await api("/api/subjects",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+
+            name:
+                document.getElementById("subjectName").value,
+
+            branch:
+                document.getElementById("subjectBranch").value,
+
+            semester:
+                document.getElementById("subjectSemester").value
+
+        })
+    });
+
+    alert(data.message);
+    loadAll();
+}
+
+
+function renderSubjects(data){
+
+    const list =
+        document.getElementById("subjectsList");
+
+    const items =
+        data.subjects || data.data || [];
+
+    document.getElementById("subjectCount")
+        .textContent=items.length;
+
+    list.innerHTML=items.map(x=>`
+
+        <div class="item">
+
+            <div>
+                <b>${x.name}</b>
+                <div class="small">
+                    ${x.branch || ""} • ${x.semester || ""}
+                </div>
+            </div>
+
+            <button class="danger"
+                onclick="removeItem('/api/admin/subjects/${x.id}')">
+                Delete
+            </button>
+
+        </div>
+
+    `).join("");
+}
+
+
+/* MATERIALS */
+
+async function addMaterial(){
+
+    const data=await api("/api/materials",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+
+            title:
+                document.getElementById("materialTitle").value,
+
+            subject:
+                document.getElementById("materialSubject").value,
+
+            branch:
+                document.getElementById("materialBranch").value,
+
+            semester:
+                document.getElementById("materialSemester").value,
+
+            url:
+                document.getElementById("materialUrl").value
+
+        })
+    });
+
+    alert(data.message);
+    loadAll();
+}
+
+
+function renderMaterials(data){
+
+    const items =
+        data.materials || data.data || [];
+
+    document.getElementById("materialCount")
+        .textContent=items.length;
+
+    document.getElementById("materialsList").innerHTML =
+        items.map(x=>`
+
+        <div class="item">
+
+            <div>
+                <b>${x.title}</b>
+                <div class="small">
+                    ${x.subject || ""} • ${x.branch || ""}
+                </div>
+            </div>
+
+            <button class="danger"
+                onclick="removeItem('/api/admin/materials/${x.id}')">
+                Delete
+            </button>
+
+        </div>
+
+    `).join("");
+}
+
+
+/* UPDATES */
+
+async function addUpdate(){
+
+    const data=await api("/api/updates",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+
+            title:
+                document.getElementById("updateTitle").value,
+
+            description:
+                document.getElementById("updateDescription").value,
+
+            type:
+                document.getElementById("updateType").value,
+
+            important:
+                document.getElementById("updateImportant").checked
+
+        })
+    });
+
+    alert(data.message);
+    loadAll();
+}
+
+
+function renderUpdates(data){
+
+    const items =
+        data.updates || data.data || [];
+
+    document.getElementById("updateCount")
+        .textContent=items.length;
+
+    document.getElementById("updatesList").innerHTML =
+        items.map(x=>`
+
+        <div class="item">
+
+            <div>
+                <b>${x.title}</b>
+                <div class="small">
+                    ${x.type || ""}
+                </div>
+            </div>
+
+            <button class="danger"
+                onclick="removeItem('/api/admin/updates/${x.id}')">
+                Delete
+            </button>
+
+        </div>
+
+    `).join("");
+}
+
+
+/* CAREER */
+
+async function addCareer(){
+
+    const data=await api("/api/career",{
+        method:"POST",
+        headers:{
+            "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+
+            title:
+                document.getElementById("careerTitle").value,
+
+            description:
+                document.getElementById("careerDescription").value,
+
+            company:
+                document.getElementById("careerCompany").value,
+
+            location:
+                document.getElementById("careerLocation").value,
+
+            type:
+                document.getElementById("careerType").value,
+
+            url:
+                document.getElementById("careerUrl").value
+
+        })
+    });
+
+    alert(data.message);
+    loadAll();
+}
+
+
+function renderCareer(data){
+
+    const items =
+        data.career || data.data || [];
+
+    document.getElementById("careerCount")
+        .textContent=items.length;
+
+    document.getElementById("careerList").innerHTML =
+        items.map(x=>`
+
+        <div class="item">
+
+            <div>
+                <b>${x.title}</b>
+                <div class="small">
+                    ${x.company || ""} •
+                    ${x.location || ""}
+                </div>
+            </div>
+
+            <button class="danger"
+                onclick="removeItem('/api/admin/career/${x.id}')">
+                Delete
+            </button>
+
+        </div>
+
+    `).join("");
+}
+
+
+/* DELETE */
+
+async function removeItem(url){
+
+    if(!confirm("Delete this item?")) return;
+
+    const data=await api(url,{
+        method:"DELETE"
+    });
+
+    alert(data.message);
+
+    loadAll();
+}
+
+
+async function loadStudents(){
+
+    const data =
+        await api("/api/admin/students");
+
+    if(!data.success){
+
+        document.getElementById("studentsList").innerHTML =
+            "<p>Unable to load students.</p>";
+
+        return;
+    }
+
+    allStudents = data.students || [];
+
+    renderStudentList(allStudents);
+}
+
+
+let allStudents = [];
+
+
+function filterStudents(){
+
+    const q =
+        document.getElementById("studentSearch")
+        .value
+        .toLowerCase()
+        .trim();
+
+    const filtered =
+        allStudents.filter(student =>
+
+            (student.name || "")
+                .toLowerCase()
+                .includes(q) ||
+
+            (student.email || "")
+                .toLowerCase()
+                .includes(q) ||
+
+            (student.college || "")
+                .toLowerCase()
+                .includes(q) ||
+
+            (student.branch || "")
+                .toLowerCase()
+                .includes(q)
+        );
+
+    renderStudentList(filtered);
+}
+
+
+function renderStudentList(students){
+
+    const list =
+        document.getElementById("studentsList");
+
+    if(!students.length){
+
+        list.innerHTML =
+            "<p>No students found.</p>";
+
+        return;
+    }
+
+    list.innerHTML =
+        students.map(student => `
+
+            <div class="item">
+
+                <div>
+
+                    <b>👤 ${student.name}</b>
+
+                    <div class="small">
+                        📧 ${student.email}
+                    </div>
+
+                    <div class="small">
+                        🏫 ${student.college || "N/A"}
+                    </div>
+
+                    <div class="small">
+                        💻 ${student.branch || "N/A"}
+                    </div>
+
+                    <div class="small">
+                        📅 ${student.year || "N/A"}
+                        • ${student.semester || "N/A"}
+                    </div>
+
+                    <div class="small">
+                        🎯 ${student.goal || "Not decided"}
+                    </div>
+
+                    <div class="small">
+                        🕒 ${student.created_at || ""}
+                    </div>
+
+                </div>
+
+            </div>
+
+        `).join("");
+}
+
+
+async function loadFeedback(){
+
+    const data =
+        await api("/api/admin/feedback");
+
+    const list =
+        document.getElementById("feedbackList");
+
+    if(!data.success){
+
+        list.innerHTML =
+            "<p>Unable to load feedback.</p>";
+
+        return;
+    }
+
+    const feedback =
+        data.feedback || [];
+
+    if(!feedback.length){
+
+        list.innerHTML =
+            "<p>No feedback yet.</p>";
+
+        return;
+    }
+
+    list.innerHTML =
+        feedback.map(item => `
+
+            <div class="item">
+
+                <div>
+
+                    <b>
+                        💬 ${item.suggestion || "No suggestion"}
+                    </b>
+
+                    <div class="small">
+                        🏫 ${item.college || "N/A"}
+                    </div>
+
+                    <div class="small">
+                        💻 ${item.branch || "N/A"}
+                        • ${item.year || "N/A"}
+                        • ${item.semester || "N/A"}
+                    </div>
+
+                    <div class="small">
+                        📚 Used:
+                        ${item.used || "N/A"}
+                    </div>
+
+                    <div class="small">
+                        🕒 ${item.created_at || ""}
+                    </div>
+
+                </div>
+
+            </div>
+
+        `).join("");
+}
+
+
+</script>
+
+</body>
+</html>
+
+<style>
+#studentsList,
+#feedbackList{
+    margin-top:20px;
+}
+
+#studentSearch{
+    width:100%;
+    box-sizing:border-box;
+    margin-bottom:15px;
+}
+
+#studentsList .item,
+#feedbackList .item{
+    display:block !important;
+    padding:18px !important;
+    margin:12px 0 !important;
+    background:#fff !important;
+    border:1px solid #ddd !important;
+    border-radius:14px !important;
+}
+
+#studentsList .small,
+#feedbackList .small{
+    display:block;
+    margin-top:6px;
+    color:#666;
+}
+</style>
