@@ -1170,7 +1170,7 @@ app.post("/api/feedback", (req, res) => {
 // STUDY HUB APIs
 // ================================
 
-app.get("/api/subjects", (req, res) => {
+app.get("/api/subjects", requireStudent, (req, res) => {
 
     const statement = db.prepare(`
         SELECT *
@@ -1417,7 +1417,7 @@ app.post("/api/materials", requireAdmin, upload.single("file"), (req, res) => {
 
 // GET ALL UPDATES
 
-app.get("/api/updates", (req, res) => {
+app.get("/api/updates", requireStudent, (req, res) => {
 
     try {
 
@@ -1547,7 +1547,7 @@ app.post("/api/updates", (req, res) => {
 // CAREER APIs
 // ================================
 
-app.get("/api/career", (req, res) => {
+app.get("/api/career", requireStudent, (req, res) => {
 
     try {
 
