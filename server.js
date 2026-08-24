@@ -354,6 +354,23 @@ app.get("/api/test-email", async (req, res) => {
 });
 
 // ================================
+// CURRENT SESSION
+// ================================
+
+app.get("/api/me", (req, res) => {
+    if (!req.session.studentId) {
+        return res.status(401).json({
+            authenticated: false
+        });
+    }
+
+    res.json({
+        authenticated: true,
+        studentId: req.session.studentId
+    });
+});
+
+// ================================
 // SIGNUP
 // ================================
 
@@ -381,6 +398,15 @@ app.post("/api/signup", (req, res) => {
     year = String(year || "").trim();
     semester = String(semester || "").trim();
     goal = String(goal || "").trim();
+
+    // All signup details are required
+    if (!name || !email || !phone || !password ||
+        !college || !branch || !year || !semester || !goal) {
+        return res.status(400).json({
+            success: false,
+            message: "All signup details are required."
+        });
+    }
 
     // Email OR phone required
     if (!email && !phone) {

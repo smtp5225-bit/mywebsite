@@ -89,6 +89,20 @@
 
 </style>
 
+
+<style id="auth-gate-style">
+body.auth-required > *:not(.auth-box):not(#authModal):not([class*="auth"]) {
+    visibility: hidden !important;
+}
+
+body.auth-required main,
+body.auth-required header,
+body.auth-required footer,
+body.auth-required nav {
+    display: none !important;
+}
+</style>
+
 </head>
 
 <body>
@@ -837,7 +851,7 @@ required
 id="signupEmail"
 type="email"
 placeholder="Email address (optional)"
->
+ required>
 
 <input
 id="signupPhone"

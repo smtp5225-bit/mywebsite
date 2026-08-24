@@ -1,3 +1,26 @@
+// ================================
+// AUTH GATE
+// ================================
+
+async function enforceAuthGate() {
+    try {
+        const response = await fetch("/api/me", {
+            credentials: "same-origin"
+        });
+
+        if (!response.ok) {
+            document.body.classList.add("auth-required");
+            return;
+        }
+
+        document.body.classList.remove("auth-required");
+    } catch (error) {
+        document.body.classList.add("auth-required");
+    }
+}
+
+document.addEventListener("DOMContentLoaded", enforceAuthGate);
+
 const $ = (selector) => document.querySelector(selector);
 
 // ===============================
