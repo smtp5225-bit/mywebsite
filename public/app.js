@@ -352,6 +352,10 @@ signupForm?.addEventListener("submit", async (event) => {
             "polytechnicLoggedIn",
             "true"
         );
+
+        // Unlock main website after successful signup/login
+        document.body.classList.remove("auth-required");
+
         updateRecordNavigation();
 
         localStorage.setItem(
