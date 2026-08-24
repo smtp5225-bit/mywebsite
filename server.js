@@ -1254,7 +1254,7 @@ app.post("/api/subjects", (req, res) => {
 // ADD STUDY MATERIAL
 // ================================
 
-app.post("/api/materials", (req, res) => {
+app.post("/api/materials", requireAdmin, (req, res) => {
 
     const {
         subjectId,
