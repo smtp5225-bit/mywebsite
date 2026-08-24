@@ -320,7 +320,13 @@ db.run(`
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
 
     )
-`);saveDatabase();
+`);
+
+    db.run(`
+        INSERT OR IGNORE INTO admins (username, password)
+        VALUES ('admin', 'Admin@12345')
+    `);
+saveDatabase();
     console.log("✅ Database ready");
 
 }
