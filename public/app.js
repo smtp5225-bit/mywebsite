@@ -822,8 +822,8 @@ function updateDashboard() {
 
     profileText.textContent =
         details.length
-            ? details.join(" • ")
-            : "Your personalized student dashboard.";
+            ? `${name} • ${details.join(" • ")}`
+            : name;
 
     loginBtn.textContent = "Logout";
 }
