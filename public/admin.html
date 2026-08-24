@@ -474,34 +474,66 @@ async function uploadMaterialPDF(){
 }
 
 async function addMaterial(){
+    const fileInput = document.getElementById("materialFile");
+    const file = fileInput?.files?.[0];
 
-    const data=await api("/api/materials",{
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
+    const formData = new FormData();
 
-            title:
-                document.getElementById("materialTitle").value,
+    formData.append(
+        "title",
+        document.getElementById("materialTitle").value.trim()
+    );
 
-            subject:
-                document.getElementById("materialSubject").value,
+    formData.append(
+        "subjectId",
+        ""
+    );
 
-            branch:
-                document.getElementById("materialBranch").value,
+    formData.append(
+        "branch",
+        document.getElementById("materialBranch").value.trim()
+    );
 
-            semester:
-                document.getElementById("materialSemester").value,
+    formData.append(
+        "semester",
+        document.getElementById("materialSemester").value.trim()
+    );
 
-            url:
-                document.getElementById("materialUrl").value
+    formData.append(
+        "url",
+        document.getElementById("materialUrl").value.trim()
+    );
 
-        })
+    formData.append("type", file ? "file" : "link");
+
+    if (file) {
+        formData.append("file", file);
+    }
+
+    const response = await fetch("/api/materials", {
+        method: "POST",
+        body: formData
     });
 
-    alert(data.message);
-    loadAll();
+    const result = await response.json();
+
+    if (!response.ok) {
+        alert(result.message || "Upload failed.");
+        return;
+    }
+
+    alert("✅ Study material added successfully!");
+
+    document.getElementById("materialTitle").value = "";
+    document.getElementById("materialUrl").value = "";
+
+    if (fileInput) {
+        fileInput.value = "";
+    }
+
+    if (typeof loadData === "function") {
+        loadData();
+    }
 }
 
 
