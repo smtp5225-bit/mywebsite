@@ -91,8 +91,19 @@
 
 
 <style id="auth-gate-style">
-body.auth-required > *:not(.auth-box):not(#authModal):not([class*="auth"]) {
+body.auth-required > * {
     visibility: hidden !important;
+}
+
+body.auth-required .auth-box,
+body.auth-required .auth-box * {
+    visibility: visible !important;
+}
+
+body.auth-required .auth-box {
+    display: block !important;
+    position: relative !important;
+    z-index: 99999 !important;
 }
 
 body.auth-required main,
