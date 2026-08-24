@@ -1324,7 +1324,7 @@ app.post(
 // ADD STUDY MATERIAL
 // ================================
 
-app.post("/api/materials", requireAdmin, (req, res) => {
+app.post("/api/materials", requireAdmin, upload.single("file"), (req, res) => {
 
     const {
         subjectId,
@@ -1335,6 +1335,10 @@ app.post("/api/materials", requireAdmin, (req, res) => {
         branch,
         semester
     } = req.body;
+
+    const uploadedUrl = req.file
+        ? `/uploads/${req.file.filename}`
+        : url;
 
     if (!title) {
         return res.status(400).json({
@@ -1364,7 +1368,7 @@ app.post("/api/materials", requireAdmin, (req, res) => {
             title,
             description || "",
             type || "",
-            url || "",
+            uploadedUrl || "",
             branch || "",
             semester || ""
         ]);
