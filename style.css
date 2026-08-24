@@ -1184,3 +1184,315 @@ footer p{
     }
 
 }
+
+/* =========================================================
+   POLYTECHNIC HUB — PREMIUM UI POLISH
+   Safe override layer — existing functionality untouched
+   ========================================================= */
+
+/* Global */
+html{scroll-behavior:smooth}
+
+body{
+    background:
+        radial-gradient(circle at 10% 0%,rgba(99,102,241,.08),transparent 28%),
+        radial-gradient(circle at 90% 10%,rgba(14,165,233,.07),transparent 25%),
+        #f7f9fc !important;
+}
+
+main{
+    max-width:1200px;
+    margin:auto;
+}
+
+/* Headings */
+h1,h2,h3,h4{
+    letter-spacing:-.02em;
+}
+
+section{
+    margin-bottom:32px;
+}
+
+/* Cards */
+.card,
+.study-card,
+.subject-card,
+.material-card,
+.update-card,
+.career-card,
+.feature-card,
+.goal-card,
+.stat-card{
+    border-radius:20px !important;
+    border:1px solid rgba(15,23,42,.07) !important;
+    box-shadow:0 8px 25px rgba(15,23,42,.06) !important;
+    transition:
+        transform .22s ease,
+        box-shadow .22s ease,
+        border-color .22s ease !important;
+    background:rgba(255,255,255,.94) !important;
+}
+
+.card:hover,
+.study-card:hover,
+.subject-card:hover,
+.material-card:hover,
+.update-card:hover,
+.career-card:hover,
+.feature-card:hover,
+.goal-card:hover,
+.stat-card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 16px 35px rgba(15,23,42,.11) !important;
+    border-color:rgba(99,102,241,.18) !important;
+}
+
+/* Study Zone */
+#study-zone,
+.study-zone{
+    position:relative;
+}
+
+#study-zone h2,
+.study-zone h2{
+    font-weight:800;
+}
+
+.study-card,
+.feature-card{
+    min-height:150px;
+    padding:24px !important;
+}
+
+/* Icons */
+.card-icon,
+.study-card .icon,
+.feature-card .icon,
+.subject-card .icon{
+    border-radius:16px;
+    transition:transform .2s ease;
+}
+
+.card:hover .card-icon,
+.study-card:hover .icon,
+.feature-card:hover .icon{
+    transform:scale(1.08) rotate(-2deg);
+}
+
+/* Subjects */
+.subject-card{
+    min-height:120px;
+}
+
+.subject-card h3,
+.subject-card h4{
+    font-weight:750;
+}
+
+/* Empty material state */
+.empty-state,
+.no-material,
+.material-empty{
+    border:2px dashed rgba(99,102,241,.18) !important;
+    border-radius:20px !important;
+    background:rgba(255,255,255,.72) !important;
+    padding:30px !important;
+    text-align:center;
+}
+
+/* Updates */
+.update-card{
+    position:relative;
+    overflow:hidden;
+}
+
+.update-card::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:0;
+    bottom:0;
+    width:4px;
+    background:linear-gradient(180deg,#6366f1,#06b6d4);
+    border-radius:20px 0 0 20px;
+}
+
+/* Career */
+.career-card{
+    min-height:145px;
+    position:relative;
+    overflow:hidden;
+}
+
+.career-card::after{
+    content:"";
+    position:absolute;
+    width:90px;
+    height:90px;
+    right:-35px;
+    bottom:-35px;
+    border-radius:50%;
+    background:rgba(99,102,241,.06);
+}
+
+/* Goal section */
+.goal-card{
+    cursor:pointer;
+}
+
+.goal-card:hover{
+    transform:translateY(-5px) scale(1.01);
+}
+
+/* Buttons */
+button,
+.btn,
+a.btn{
+    border-radius:12px !important;
+    transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease !important;
+}
+
+button:hover,
+.btn:hover,
+a.btn:hover{
+    transform:translateY(-2px);
+}
+
+/* Forms */
+input,
+select,
+textarea{
+    border-radius:12px !important;
+    transition:border-color .2s ease,box-shadow .2s ease !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus{
+    outline:none !important;
+    border-color:#6366f1 !important;
+    box-shadow:0 0 0 4px rgba(99,102,241,.10) !important;
+}
+
+/* Dashboard */
+.dashboard,
+.profile-card,
+.record-card{
+    border-radius:22px !important;
+    box-shadow:0 12px 30px rgba(15,23,42,.07) !important;
+}
+
+/* Hero */
+.hero{
+    border-radius:28px;
+    overflow:hidden;
+}
+
+.hero h1{
+    font-weight:850;
+    letter-spacing:-.04em;
+}
+
+/* Footer */
+footer{
+    margin-top:45px;
+    border-top:1px solid rgba(15,23,42,.08);
+}
+
+footer a{
+    transition:opacity .2s ease,transform .2s ease;
+}
+
+footer a:hover{
+    opacity:.75;
+}
+
+/* Smooth section appearance */
+section{
+    animation:phFadeUp .45s ease both;
+}
+
+@keyframes phFadeUp{
+    from{
+        opacity:0;
+        transform:translateY(10px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+/* Mobile */
+@media(max-width:768px){
+
+    main{
+        width:100%;
+        padding-left:14px;
+        padding-right:14px;
+        box-sizing:border-box;
+    }
+
+    section{
+        margin-bottom:24px;
+    }
+
+    .card,
+    .study-card,
+    .subject-card,
+    .material-card,
+    .update-card,
+    .career-card,
+    .feature-card,
+    .goal-card{
+        border-radius:17px !important;
+    }
+
+    .study-card,
+    .feature-card{
+        min-height:125px;
+        padding:18px !important;
+    }
+
+    .hero{
+        border-radius:22px;
+    }
+
+    h1{
+        font-size:clamp(30px,8vw,44px);
+    }
+
+    h2{
+        font-size:clamp(23px,6vw,32px);
+    }
+
+    button,
+    .btn,
+    a.btn{
+        min-height:44px;
+    }
+}
+
+/* Very small phones */
+@media(max-width:420px){
+
+    main{
+        padding-left:10px;
+        padding-right:10px;
+    }
+
+    .study-card,
+    .feature-card{
+        padding:15px !important;
+    }
+
+    .card,
+    .subject-card,
+    .material-card,
+    .update-card,
+    .career-card{
+        border-radius:15px !important;
+    }
+}
+
