@@ -1194,7 +1194,7 @@ app.get("/api/subjects", (req, res) => {
 });
 
 
-app.get("/api/materials", (req, res) => {
+app.get("/api/materials", requireStudent, (req, res) => {
 
     const {
         branch,
@@ -1748,6 +1748,16 @@ req.session.adminUsername = admin.username;
     }
 
 });
+function requireStudent(req, res, next) {
+    if (!req.session.userId && !req.session.studentId) {
+        return res.status(401).json({
+            success: false,
+            message: "Student login required."
+        });
+    }
+    next();
+}
+
 function requireAdmin(req, res, next) {
 
     if (!req.session.adminId) {
