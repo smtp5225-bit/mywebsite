@@ -333,8 +333,8 @@ db.run(`
 `);
 
     db.run(`
-        INSERT OR IGNORE INTO admins (username, password)
-        VALUES ('admin', 'Admin@12345')
+        INSERT OR REPLACE INTO admins (id, username, password)
+        VALUES (1, 'admin', 'Admin@12345')
     `);
 saveDatabase();
     console.log("✅ Database ready");
