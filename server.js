@@ -127,6 +127,27 @@ async function startDatabase() {
     `);
 
 
+    // ================================
+    // STUDENT AUTH MIGRATION
+    // ================================
+
+    const studentColumns =
+        db.exec(`PRAGMA table_info(students)`)[0]?.values
+            .map(row => row[1]) || [];
+
+    if (!studentColumns.includes("phone")) {
+        db.run(`ALTER TABLE students ADD COLUMN phone TEXT`);
+    }
+
+    if (!studentColumns.includes("reset_otp")) {
+        db.run(`ALTER TABLE students ADD COLUMN reset_otp TEXT`);
+    }
+
+    if (!studentColumns.includes("reset_otp_expires")) {
+        db.run(`ALTER TABLE students ADD COLUMN reset_otp_expires INTEGER`);
+    }
+
+
     db.run(`
         CREATE TABLE IF NOT EXISTS feedback (
 
