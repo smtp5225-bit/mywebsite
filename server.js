@@ -1826,6 +1826,19 @@ app.delete("/api/admin/materials/:id", requireAdmin, (req, res) => {
 
     try {
 
+        const find = db.prepare(`
+            SELECT url FROM study_materials
+            WHERE id = ?
+        `);
+
+        find.bind([id]);
+
+        let material = null;
+        if (find.step()) {
+            material = find.getAsObject();
+        }
+        find.free();
+
         const statement = db.prepare(`
             DELETE FROM study_materials
             WHERE id = ?
@@ -1834,6 +1847,13 @@ app.delete("/api/admin/materials/:id", requireAdmin, (req, res) => {
         statement.bind([id]);
         statement.step();
         statement.free();
+
+        if (material && material.url && material.url.startsWith("/uploads/")) {
+            const filePath = path.join(__dirname, "public", material.url);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
 
         saveDatabase();
 

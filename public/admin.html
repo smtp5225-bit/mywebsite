@@ -557,6 +557,14 @@ function renderMaterials(data){
                 </div>
             </div>
 
+            ${x.url ? `
+            <a class="primary"
+               href="${x.url}"
+               target="_blank"
+               rel="noopener">
+                📄 Open
+            </a>` : ""}
+
             <button class="danger"
                 onclick="removeItem('/api/admin/materials/${x.id}')">
                 Delete
