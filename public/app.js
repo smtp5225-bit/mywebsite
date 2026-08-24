@@ -814,10 +814,10 @@ function updateDashboard() {
     }
 
     const details = [
-        profile.college,
-        profile.branch,
-        profile.year,
-        profile.semester
+        profile.college || localStorage.getItem("studentCollege"),
+        profile.branch || localStorage.getItem("studentBranch"),
+        profile.year || localStorage.getItem("studentYear"),
+        profile.semester || localStorage.getItem("studentSemester")
     ].filter(Boolean);
 
     profileText.textContent =
