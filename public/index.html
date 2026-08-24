@@ -95,14 +95,14 @@ body.auth-required > * {
     visibility: hidden !important;
 }
 
-body.auth-required .auth-box,
-body.auth-required .auth-box * {
+body.auth-required #profileDialog,
+body.auth-required #profileDialog * {
     visibility: visible !important;
 }
 
-body.auth-required .auth-box {
+body.auth-required #profileDialog {
     display: block !important;
-    position: relative !important;
+    position: fixed !important;
     z-index: 99999 !important;
 }
 

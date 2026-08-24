@@ -10,6 +10,13 @@ async function enforceAuthGate() {
 
         if (!response.ok) {
             document.body.classList.add("auth-required");
+
+            const authDialog = document.getElementById("profileDialog");
+
+            if (authDialog && !authDialog.open) {
+                authDialog.showModal();
+            }
+
             return;
         }
 
