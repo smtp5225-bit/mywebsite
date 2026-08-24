@@ -167,6 +167,21 @@ textarea{min-height:90px}
         <input id="materialSemester" placeholder="Semester">
         <input id="materialUrl" placeholder="PDF / Resource URL">
 
+        <input
+            id="materialFile"
+            type="file"
+            accept=".pdf,application/pdf"
+        >
+
+        <button
+            class="primary"
+            type="button"
+            onclick="uploadMaterialPDF()">
+            📤 Upload PDF
+        </button>
+
+        <p id="uploadStatus"></p>
+
         <button class="primary" onclick="addMaterial()">
             + Add Material
         </button>
@@ -411,6 +426,52 @@ function renderSubjects(data){
 
 
 /* MATERIALS */
+
+
+async function uploadMaterialPDF(){
+
+    const fileInput = document.getElementById("materialFile");
+    const status = document.getElementById("uploadStatus");
+
+    if(!fileInput.files.length){
+        status.textContent = "Please select a PDF first.";
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", fileInput.files[0]);
+
+    status.textContent = "Uploading PDF... ⏳";
+
+    try{
+
+        const response = await fetch("/api/admin/upload-material", {
+            method: "POST",
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if(!response.ok){
+            status.textContent =
+                result.message || "Upload failed.";
+            return;
+        }
+
+        document.getElementById("materialUrl").value =
+            result.url;
+
+        status.textContent =
+            "✅ PDF uploaded successfully.";
+
+    }catch(error){
+
+        console.error(error);
+        status.textContent =
+            "❌ Upload failed.";
+
+    }
+}
 
 async function addMaterial(){
 

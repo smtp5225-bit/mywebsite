@@ -5,6 +5,7 @@ const fs = require("fs");
 const initSqlJs = require("sql.js");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
+const multer = require("multer");
 
 const mailTransporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
@@ -18,6 +19,47 @@ const mailTransporter = nodemailer.createTransport({
 });
 
 
+
+
+// ================================
+// MATERIAL FILE UPLOAD
+// ================================
+
+const uploadDir = path.join(__dirname, "public", "uploads");
+
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const safeName = file.originalname
+            .replace(/[^a-zA-Z0-9._-]/g, "_");
+
+        cb(null, `${Date.now()}-${safeName}`);
+    }
+});
+
+const materialUpload = multer({
+    storage,
+    limits: {
+        fileSize: 20 * 1024 * 1024
+    },
+    fileFilter: (req, file, cb) => {
+        const allowed = [
+            "application/pdf"
+        ];
+
+        if (allowed.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error("Only PDF files are allowed."));
+        }
+    }
+});
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1249,6 +1291,34 @@ app.post("/api/subjects", (req, res) => {
 
 });
 
+
+
+// ================================
+// ADMIN PDF UPLOAD
+// ================================
+
+app.post(
+    "/api/admin/upload-material",
+    requireAdmin,
+    materialUpload.single("file"),
+    (req, res) => {
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "PDF file is required."
+            });
+        }
+
+        const fileUrl = `/uploads/${req.file.filename}`;
+
+        res.json({
+            success: true,
+            url: fileUrl,
+            message: "PDF uploaded successfully."
+        });
+    }
+);
 
 // ================================
 // ADD STUDY MATERIAL
