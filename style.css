@@ -1496,3 +1496,48 @@ section{
     }
 }
 
+
+/* ===== Dashboard student information visibility ===== */
+.dashboard p,
+.dashboard .student-info,
+.dashboard .profile-info,
+.dashboard .student-meta,
+.dashboard .meta,
+.profile-card p,
+.profile-card .student-info,
+.record-card p,
+.record-card .student-info{
+    font-size:18px !important;
+    line-height:1.6 !important;
+    font-weight:500 !important;
+    color:#6b7280 !important;
+    opacity:1 !important;
+    visibility:visible !important;
+}
+
+/* Dashboard name */
+.dashboard h2,
+.dashboard h3,
+.profile-card h2,
+.profile-card h3,
+.record-card h2,
+.record-card h3{
+    font-size:30px !important;
+    line-height:1.25 !important;
+}
+
+/* Mobile */
+@media(max-width:600px){
+    .dashboard p,
+    .dashboard .student-info,
+    .dashboard .profile-info,
+    .dashboard .student-meta,
+    .dashboard .meta,
+    .profile-card p,
+    .profile-card .student-info,
+    .record-card p,
+    .record-card .student-info{
+        font-size:17px !important;
+        line-height:1.55 !important;
+    }
+}
