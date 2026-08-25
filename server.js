@@ -896,238 +896,101 @@ app.post("/api/reset-password", async (req, res) => {
 // FEEDBACK
 // ================================
 
-app.post("/api/feedback", (req, res) => {
-
-    const {
-
-        studentId,
-        college,
-        branch,
-        year,
-        semester,
-        used,
-        suggestion
-
-    } = req.body;
-
+app.post("/api/feedback", async (req,res) => {
+    const {studentId,college,branch,year,semester,used,suggestion}=req.body;
 
     try {
+        const id=await nextId("feedback");
+        const {error}=await supabase.from("feedback").insert({
+            id,
+            student_id: studentId || null,
+            college: college || "",
+            branch: branch || "",
+            year: year || "",
+            semester: semester || "",
+            used: used || "",
+            suggestion: suggestion || ""
+        });
 
-        const statement = db.prepare(`
-
-            INSERT INTO feedback
-
-            (
-                student_id,
-                college,
-                branch,
-                year,
-                semester,
-                used,
-                suggestion
-            )
-
-            VALUES (?,?,?,?,?,?,?)
-
-        `);
-
-
-        statement.bind([
-
-            studentId || null,
-
-            college || "",
-
-            branch || "",
-
-            year || "",
-
-            semester || "",
-
-            used || "",
-
-            suggestion || ""
-
-        ]);
-
-
-        statement.step();
-
-        statement.free();
-
-
-        saveDatabase();
-
+        if(error) throw error;
 
         res.json({
-
-            success: true,
-
-            message:
-                "Thank you! Your feedback helps us improve ❤️"
-
+            success:true,
+            message:"Thank you! Your feedback helps us improve ❤️"
         });
-
-
-    } catch (error) {
-
-        console.log(error);
-
-
-        res.status(500).json({
-
-            success: false,
-
-            message:
-                "Could not save feedback."
-
-        });
-
+    } catch(error) {
+        console.error("FEEDBACK ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not save feedback."});
     }
-
 });
+
 // ================================
 // STUDY HUB APIs
 // ================================
 
-app.get("/api/subjects", requireStudent, (req, res) => {
+app.get("/api/subjects", requireStudent, async (req,res) => {
+    try {
+        const {data,error}=await supabase
+            .from("subjects")
+            .select("*")
+            .order("name",{ascending:true});
 
-    const statement = db.prepare(`
-        SELECT *
-        FROM subjects
-        ORDER BY name ASC
-    `);
-
-    const subjects = [];
-
-    while (statement.step()) {
-        subjects.push(statement.getAsObject());
+        if(error) throw error;
+        res.json({success:true,subjects:data || []});
+    } catch(error) {
+        console.error("SUBJECTS ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not load subjects."});
     }
-
-    statement.free();
-
-    res.json({
-        success: true,
-        subjects
-    });
-
 });
 
-
-app.get("/api/materials", requireStudent, (req, res) => {
-
-    const {
-        branch,
-        semester,
-        subjectId
-    } = req.query;
-
-    let query = `
-        SELECT
-            study_materials.*,
-            subjects.name AS subject_name
-        FROM study_materials
-        LEFT JOIN subjects
-            ON study_materials.subject_id = subjects.id
-        WHERE 1 = 1
-    `;
-
-    const params = [];
-
-    if (branch) {
-        query += ` AND study_materials.branch = ?`;
-        params.push(branch);
-    }
-
-    if (semester) {
-        query += ` AND study_materials.semester = ?`;
-        params.push(semester);
-    }
-
-    if (subjectId) {
-        query += ` AND study_materials.subject_id = ?`;
-        params.push(subjectId);
-    }
-
-    query += `
-        ORDER BY study_materials.created_at DESC
-    `;
-
-    const statement = db.prepare(query);
-
-    statement.bind(params);
-
-    const materials = [];
-
-    while (statement.step()) {
-        materials.push(statement.getAsObject());
-    }
-
-    statement.free();
-
-    res.json({
-        success: true,
-        materials
-    });
-
-});
-// ================================
-// ADD SUBJECT
-// ================================
-
-app.post("/api/subjects", (req, res) => {
-
-    const {
-        name,
-        branch,
-        semester
-    } = req.body;
-
-    if (!name) {
-        return res.status(400).json({
-            success: false,
-            message: "Subject name is required."
-        });
-    }
+app.get("/api/materials", requireStudent, async (req,res) => {
+    const {branch,semester,subjectId}=req.query;
 
     try {
+        let query=supabase
+            .from("study_materials")
+            .select("*, subjects(name)")
+            .order("created_at",{ascending:false});
 
-        const statement = db.prepare(`
-            INSERT INTO subjects
-            (name, branch, semester)
-            VALUES (?, ?, ?)
-        `);
+        if(branch) query=query.eq("branch",branch);
+        if(semester) query=query.eq("semester",semester);
+        if(subjectId) query=query.eq("subject_id",Number(subjectId));
 
-        statement.bind([
-            name,
-            branch || "",
-            semester || ""
-        ]);
+        const {data,error}=await query;
+        if(error) throw error;
 
-        statement.step();
-        statement.free();
+        const materials=(data || []).map(x=>({
+            ...x,
+            subject_name:x.subjects?.name || null
+        }));
 
-        saveDatabase();
-
-        res.json({
-            success: true,
-            message: "Subject added successfully."
-        });
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Could not add subject."
-        });
-
+        res.json({success:true,materials});
+    } catch(error) {
+        console.error("MATERIALS ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not load materials."});
     }
-
 });
 
+app.post("/api/subjects", async (req,res) => {
+    const {name,branch,semester}=req.body;
 
+    if(!name) return res.status(400).json({
+        success:false,message:"Subject name is required."
+    });
+
+    try {
+        const id=await nextId("subjects");
+        const {error}=await supabase.from("subjects").insert({
+            id,name,branch:branch || "",semester:semester || ""
+        });
+
+        if(error) throw error;
+        res.json({success:true,message:"Subject added successfully."});
+    } catch(error) {
+        console.error("ADD SUBJECT ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not add subject."});
+    }
+});
 
 // ================================
 // ADMIN PDF UPLOAD
@@ -1137,22 +1000,26 @@ app.post(
     "/api/admin/upload-material",
     requireAdmin,
     materialUpload.single("file"),
-    (req, res) => {
+    async (req,res) => {
+        try {
+            if(!req.file) return res.status(400).json({
+                success:false,message:"PDF file is required."
+            });
 
-        if (!req.file) {
-            return res.status(400).json({
-                success: false,
-                message: "PDF file is required."
+            const fileUrl=await uploadToSupabase(req.file);
+
+            res.json({
+                success:true,
+                url:fileUrl,
+                message:"PDF uploaded successfully."
+            });
+        } catch(error) {
+            console.error("PDF UPLOAD ERROR:",error.message);
+            res.status(500).json({
+                success:false,
+                message:"PDF upload failed."
             });
         }
-
-        const fileUrl = `/uploads/${req.file.filename}`;
-
-        res.json({
-            success: true,
-            url: fileUrl,
-            message: "PDF uploaded successfully."
-        });
     }
 );
 
@@ -1160,792 +1027,341 @@ app.post(
 // ADD STUDY MATERIAL
 // ================================
 
-app.post("/api/materials", requireAdmin, materialUpload.single("file"), (req, res) => {
+app.post("/api/materials", requireAdmin, materialUpload.single("file"), async (req,res) => {
+    const {subjectId,title,description,type,url,branch,semester}=req.body;
 
-    const {
-        subjectId,
-        title,
-        description,
-        type,
-        url,
-        branch,
-        semester
-    } = req.body;
-
-    const uploadedUrl = req.file
-        ? `/uploads/${req.file.filename}`
-        : url;
-
-    if (!title) {
-        return res.status(400).json({
-            success: false,
-            message: "Material title is required."
-        });
-    }
+    if(!title) return res.status(400).json({
+        success:false,message:"Material title is required."
+    });
 
     try {
+        let uploadedUrl=url || "";
 
-        const statement = db.prepare(`
-            INSERT INTO study_materials
-            (
-                subject_id,
-                title,
-                description,
-                type,
-                url,
-                branch,
-                semester
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `);
+        if(req.file) uploadedUrl=await uploadToSupabase(req.file);
 
-        statement.bind([
-            subjectId || null,
+        const id=await nextId("study_materials");
+
+        const {error}=await supabase.from("study_materials").insert({
+            id,
+            subject_id:subjectId ? Number(subjectId) : null,
             title,
-            description || "",
-            type || "",
-            uploadedUrl || "",
-            branch || "",
-            semester || ""
-        ]);
+            description:description || "",
+            type:type || "",
+            url:uploadedUrl,
+            branch:branch || "",
+            semester:semester || ""
+        });
 
-        statement.step();
-        statement.free();
-
-        saveDatabase();
+        if(error) throw error;
 
         res.json({
-            success: true,
-            message: "Study material added successfully."
+            success:true,
+            message:"Study material added successfully."
         });
-
-    } catch (error) {
-
-        console.log(error);
-
+    } catch(error) {
+        console.error("ADD MATERIAL ERROR:",error.message);
         res.status(500).json({
-            success: false,
-            message: "Could not add study material."
+            success:false,message:"Could not add study material."
         });
-
     }
-
 });
+
 // ================================
 // UPDATES APIs
 // ================================
 
-// GET ALL UPDATES
-
-app.get("/api/updates", requireStudent, (req, res) => {
-
+app.get("/api/updates", requireStudent, async (req,res) => {
     try {
+        const {data,error}=await supabase
+            .from("updates")
+            .select("*")
+            .order("important",{ascending:false})
+            .order("created_at",{ascending:false});
 
-        const statement = db.prepare(`
-            SELECT *
-            FROM updates
-            ORDER BY important DESC, created_at DESC
-        `);
-
-        const updates = [];
-
-        while (statement.step()) {
-            updates.push(statement.getAsObject());
-        }
-
-        statement.free();
-
-        res.json({
-            success: true,
-            updates
-        });
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Could not load updates."
-        });
-
+        if(error) throw error;
+        res.json({success:true,updates:data || []});
+    } catch(error) {
+        console.error("UPDATES ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not load updates."});
     }
-
 });
 
+app.post("/api/updates", async (req,res) => {
+    const {title,description,type,important}=req.body;
 
-// ADD UPDATE
-
-app.post("/api/updates", (req, res) => {
-
-    const {
-        title,
-        description,
-        type,
-        important
-    } = req.body;
-
-
-    if (!title) {
-
-        return res.status(400).json({
-
-            success: false,
-
-            message: "Update title is required."
-
-        });
-
-    }
-
+    if(!title) return res.status(400).json({
+        success:false,message:"Update title is required."
+    });
 
     try {
+        const id=await nextId("updates");
 
-        const statement = db.prepare(`
-
-            INSERT INTO updates
-
-            (
-                title,
-                description,
-                type,
-                important
-            )
-
-            VALUES (?, ?, ?, ?)
-
-        `);
-
-
-        statement.bind([
-
+        const {error}=await supabase.from("updates").insert({
+            id,
             title,
-
-            description || "",
-
-            type || "General",
-
-            important ? 1 : 0
-
-        ]);
-
-
-        statement.step();
-
-        statement.free();
-
-
-        saveDatabase();
-
-
-        res.json({
-
-            success: true,
-
-            message: "Update added successfully."
-
+            description:description || "",
+            type:type || "General",
+            important:important ? 1 : 0
         });
 
+        if(error) throw error;
 
-    } catch (error) {
-
-        console.log(error);
-
-
-        res.status(500).json({
-
-            success: false,
-
-            message: "Could not add update."
-
-        });
-
+        res.json({success:true,message:"Update added successfully."});
+    } catch(error) {
+        console.error("ADD UPDATE ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not add update."});
     }
-
 });
+
 // ================================
 // CAREER APIs
 // ================================
 
-app.get("/api/career", requireStudent, (req, res) => {
-
+app.get("/api/career", requireStudent, async (req,res) => {
     try {
+        const {data,error}=await supabase
+            .from("career_posts")
+            .select("*")
+            .order("created_at",{ascending:false});
 
-        const statement = db.prepare(`
-            SELECT *
-            FROM career_posts
-            ORDER BY created_at DESC
-        `);
-
-        const career = [];
-
-        while (statement.step()) {
-            career.push(statement.getAsObject());
-        }
-
-        statement.free();
-
-        res.json({
-            success: true,
-            career
-        });
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Could not load career posts."
-        });
-
+        if(error) throw error;
+        res.json({success:true,career:data || []});
+    } catch(error) {
+        console.error("CAREER ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not load career posts."});
     }
-
 });
 
+app.post("/api/career", async (req,res) => {
+    const {title,description,company,location,type,url}=req.body;
 
-app.post("/api/career", (req, res) => {
-
-    const {
-        title,
-        description,
-        company,
-        location,
-        type,
-        url
-    } = req.body;
-
-
-    if (!title) {
-
-        return res.status(400).json({
-            success: false,
-            message: "Career title is required."
-        });
-
-    }
-
+    if(!title) return res.status(400).json({
+        success:false,message:"Career title is required."
+    });
 
     try {
+        const id=await nextId("career_posts");
 
-        const statement = db.prepare(`
-            INSERT INTO career_posts
-            (
-                title,
-                description,
-                company,
-                location,
-                type,
-                url
-            )
-            VALUES (?, ?, ?, ?, ?, ?)
-        `);
-
-
-        statement.bind([
+        const {error}=await supabase.from("career_posts").insert({
+            id,
             title,
-            description || "",
-            company || "",
-            location || "",
-            type || "Opportunity",
-            url || ""
-        ]);
-
-
-        statement.step();
-        statement.free();
-
-        saveDatabase();
-
-
-        res.json({
-            success: true,
-            message: "Career post added successfully."
+            description:description || "",
+            company:company || "",
+            location:location || "",
+            type:type || "Opportunity",
+            url:url || ""
         });
 
-    } catch (error) {
+        if(error) throw error;
 
-        console.log(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Could not add career post."
-        });
-
+        res.json({success:true,message:"Career post added successfully."});
+    } catch(error) {
+        console.error("ADD CAREER ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not add career post."});
     }
+});
 
-});// ================================
+// ================================
 // ADMIN LOGIN
 // ================================
 
 const adminLoginAttempts = new Map();
 
-function adminRateLimit(req, res, next) {
-    const key = req.ip || req.socket.remoteAddress || "unknown";
-    const now = Date.now();
-    const data = adminLoginAttempts.get(key) || { count: 0, blockedUntil: 0 };
+function adminRateLimit(req,res,next) {
+    const key=req.ip || req.socket.remoteAddress || "unknown";
+    const now=Date.now();
+    const data=adminLoginAttempts.get(key) || {count:0,blockedUntil:0};
 
-    if (data.blockedUntil > now) {
-        return res.status(429).json({
-            success: false,
-            message: "Too many login attempts. Try again later."
-        });
-    }
+    if(data.blockedUntil>now) return res.status(429).json({
+        success:false,message:"Too many login attempts. Try again later."
+    });
 
-    req.adminRateKey = key;
+    req.adminRateKey=key;
     next();
 }
 
-app.post("/api/admin/login", adminRateLimit, (req, res) => {
+app.post("/api/admin/login",adminRateLimit,async (req,res)=>{
+    const {username,password}=req.body;
 
-    const {
-        username,
-        password
-    } = req.body;
-
-
-    if (!username || !password) {
-
-        return res.status(400).json({
-
-            success: false,
-
-            message: "Username and password are required."
-
-        });
-
-    }
-
+    if(!username || !password) return res.status(400).json({
+        success:false,message:"Username and password are required."
+    });
 
     try {
+        const {data:rows,error}=await supabase
+            .from("admins")
+            .select("id,username,password")
+            .eq("username",username)
+            .limit(1);
 
-        const statement = db.prepare(`
+        if(error) throw error;
 
-            SELECT
-                id,
-                username,
-                password
+        const admin=rows?.[0];
 
-            FROM admins
-
-            WHERE username = ?
-
-        `);
-
-
-        statement.bind([
-            username
-        ]);
-
-
-        if (!statement.step()) {
-
-            statement.free();
-
+        if(!admin || !verifyPassword(password,admin.password)) {
             return res.status(401).json({
-
-                success: false,
-
-                message: "Invalid admin username or password."
-
-            });
-
-        }
-
-
-        const admin =
-            statement.getAsObject();
-
-        statement.free();
-
-        if (!verifyPassword(password, admin.password)) {
-            return res.status(401).json({
-                success: false,
-                message: "Invalid admin username or password."
+                success:false,message:"Invalid admin username or password."
             });
         }
 
         delete admin.password;
+        req.session.adminId=admin.id;
+        req.session.adminUsername=admin.username;
 
-req.session.adminId = admin.id;
-req.session.adminUsername = admin.username;
         res.json({
-
-            success: true,
-
-            message: "Admin login successful.",
+            success:true,
+            message:"Admin login successful.",
             admin
-
         });
-
-    } catch (error) {
-
-        console.log(error);
-
+    } catch(error) {
+        console.error("ADMIN LOGIN ERROR:",error.message);
         res.status(500).json({
-
-            success: false,
-
-            message: "Admin login failed."
-
+            success:false,message:"Admin login failed."
         });
-
     }
-
 });
-function requireStudent(req, res, next) {
-    if (!req.session.userId && !req.session.studentId) {
+
+function requireStudent(req,res,next) {
+    if(!req.session.userId && !req.session.studentId) {
         return res.status(401).json({
-            success: false,
-            message: "Student login required."
+            success:false,message:"Student login required."
         });
     }
     next();
 }
 
-function requireAdmin(req, res, next) {
-
-    if (!req.session.adminId) {
-
+function requireAdmin(req,res,next) {
+    if(!req.session.adminId) {
         return res.status(401).json({
-            success: false,
-            message: "Admin login required."
+            success:false,message:"Admin login required."
         });
-
     }
-
     next();
 }
-//  ================================
+
+// ================================
 // ADMIN DELETE APIs
 // ================================
 
-
-// DELETE SUBJECT
-
-app.delete("/api/admin/subjects/:id", requireAdmin, (req, res) => {
-
-    const id = Number(req.params.id);
-
-    if (!id) {
-        return res.status(400).json({
-            success: false,
-            message: "Invalid subject ID."
-        });
-    }
-
+app.delete("/api/admin/subjects/:id",requireAdmin,async(req,res)=>{
     try {
+        const id=Number(req.params.id);
+        if(!id) return res.status(400).json({success:false,message:"Invalid subject ID."});
 
-        const statement = db.prepare(`
-            DELETE FROM subjects
-            WHERE id = ?
-        `);
+        const {error}=await supabase.from("subjects").delete().eq("id",id);
+        if(error) throw error;
 
-        statement.bind([id]);
-        statement.step();
-        statement.free();
-
-        saveDatabase();
-
-        res.json({
-            success: true,
-            message: "Subject deleted successfully."
-        });
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Could not delete subject."
-        });
-
+        res.json({success:true,message:"Subject deleted successfully."});
+    } catch(error) {
+        console.error("DELETE SUBJECT ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not delete subject."});
     }
-
 });
 
-
-// DELETE STUDY MATERIAL
-
-app.delete("/api/admin/materials/:id", requireAdmin, (req, res) => {
-
-    const id = Number(req.params.id);
-
-    if (!id) {
-        return res.status(400).json({
-            success: false,
-            message: "Invalid material ID."
-        });
-    }
-
+app.delete("/api/admin/materials/:id",requireAdmin,async(req,res)=>{
     try {
+        const id=Number(req.params.id);
+        if(!id) return res.status(400).json({success:false,message:"Invalid material ID."});
 
-        const find = db.prepare(`
-            SELECT url FROM study_materials
-            WHERE id = ?
-        `);
+        const {data:material,error:findError}=await supabase
+            .from("study_materials")
+            .select("url")
+            .eq("id",id)
+            .maybeSingle();
 
-        find.bind([id]);
+        if(findError) throw findError;
 
-        let material = null;
-        if (find.step()) {
-            material = find.getAsObject();
-        }
-        find.free();
+        const {error}=await supabase.from("study_materials").delete().eq("id",id);
+        if(error) throw error;
 
-        const statement = db.prepare(`
-            DELETE FROM study_materials
-            WHERE id = ?
-        `);
-
-        statement.bind([id]);
-        statement.step();
-        statement.free();
-
-        if (material && material.url && material.url.startsWith("/uploads/")) {
-            const filePath = path.join(__dirname, "public", material.url);
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
-        }
-
-        saveDatabase();
-
-        res.json({
-            success: true,
-            message: "Study material deleted successfully."
-        });
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Could not delete material."
-        });
-
+        res.json({success:true,message:"Study material deleted successfully."});
+    } catch(error) {
+        console.error("DELETE MATERIAL ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not delete material."});
     }
-
 });
 
-
-// DELETE UPDATE
-
-app.delete("/api/admin/updates/:id", requireAdmin, (req, res) => {
-
-    const id = Number(req.params.id);
-
-    if (!id) {
-        return res.status(400).json({
-            success: false,
-            message: "Invalid update ID."
-        });
-    }
-
+app.delete("/api/admin/updates/:id",requireAdmin,async(req,res)=>{
     try {
+        const id=Number(req.params.id);
+        if(!id) return res.status(400).json({success:false,message:"Invalid update ID."});
 
-        const statement = db.prepare(`
-            DELETE FROM updates
-            WHERE id = ?
-        `);
+        const {error}=await supabase.from("updates").delete().eq("id",id);
+        if(error) throw error;
 
-        statement.bind([id]);
-        statement.step();
-        statement.free();
-
-        saveDatabase();
-
-        res.json({
-            success: true,
-            message: "Update deleted successfully."
-        });
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Could not delete update."
-        });
-
+        res.json({success:true,message:"Update deleted successfully."});
+    } catch(error) {
+        console.error("DELETE UPDATE ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not delete update."});
     }
-
 });
 
-
-// DELETE CAREER POST
-
-app.delete("/api/admin/career/:id", requireAdmin, (req, res) => {
-
-    const id = Number(req.params.id);
-
-    if (!id) {
-        return res.status(400).json({
-            success: false,
-            message: "Invalid career post ID."
-        });
-    }
-
+app.delete("/api/admin/career/:id",requireAdmin,async(req,res)=>{
     try {
+        const id=Number(req.params.id);
+        if(!id) return res.status(400).json({success:false,message:"Invalid career post ID."});
 
-        const statement = db.prepare(`
-            DELETE FROM career_posts
-            WHERE id = ?
-        `);
+        const {error}=await supabase.from("career_posts").delete().eq("id",id);
+        if(error) throw error;
 
-        statement.bind([id]);
-        statement.step();
-        statement.free();
-
-        saveDatabase();
-
-        res.json({
-            success: true,
-            message: "Career post deleted successfully."
-        });
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Could not delete career post."
-        });
-
+        res.json({success:true,message:"Career post deleted successfully."});
+    } catch(error) {
+        console.error("DELETE CAREER ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not delete career post."});
     }
-
 });
 
 // ================================
 // ADMIN DATA APIs
 // ================================
 
-app.get("/api/admin/students", requireAdmin, (req, res) => {
-
+app.get("/api/admin/students",requireAdmin,async(req,res)=>{
     try {
+        const {data,error}=await supabase
+            .from("students")
+            .select("id,name,email,phone,college,branch,year,semester,goal,created_at")
+            .order("created_at",{ascending:false});
 
-        const statement = db.prepare(`
-            SELECT
-                id,
-                name,
-                email,
-                college,
-                branch,
-                year,
-                semester,
-                goal,
-                created_at
-            FROM students
-            ORDER BY created_at DESC
-        `);
-
-        const students = [];
-
-        while (statement.step()) {
-            students.push(statement.getAsObject());
-        }
-
-        statement.free();
-
-        res.json({
-            success: true,
-            students
-        });
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Could not load students."
-        });
-
+        if(error) throw error;
+        res.json({success:true,students:data || []});
+    } catch(error) {
+        console.error("ADMIN STUDENTS ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not load students."});
     }
-
 });
 
-
-app.get("/api/admin/feedback", requireAdmin, (req, res) => {
-
+app.get("/api/admin/feedback",requireAdmin,async(req,res)=>{
     try {
+        const {data,error}=await supabase
+            .from("feedback")
+            .select("*")
+            .order("created_at",{ascending:false});
 
-        const statement = db.prepare(`
-            SELECT *
-            FROM feedback
-            ORDER BY created_at DESC
-        `);
-
-        const feedback = [];
-
-        while (statement.step()) {
-            feedback.push(statement.getAsObject());
-        }
-
-        statement.free();
-
-        res.json({
-            success: true,
-            feedback
-        });
-
-    } catch (error) {
-
-        console.log(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Could not load feedback."
-        });
-
+        if(error) throw error;
+        res.json({success:true,feedback:data || []});
+    } catch(error) {
+        console.error("ADMIN FEEDBACK ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not load feedback."});
     }
-
 });
 
-
-
-// ================================
-// ADMIN DELETE STUDENT
-// ================================
-
-app.delete("/api/admin/students/:id", requireAdmin, (req, res) => {
-
+app.delete("/api/admin/students/:id",requireAdmin,async(req,res)=>{
     try {
-
-        const statement = db.prepare(`
-            DELETE FROM students
-            WHERE id = ?
-        `);
-
-        statement.bind([
-            Number(req.params.id)
-        ]);
-
-        statement.step();
-        statement.free();
-
-        saveDatabase();
-
-        res.json({
-            success: true,
-            message: "Student deleted successfully."
+        const id=Number(req.params.id);
+        if(!id) return res.status(400).json({
+            success:false,message:"Invalid student ID."
         });
 
-    } catch (error) {
+        const {error}=await supabase.from("students").delete().eq("id",id);
+        if(error) throw error;
 
-        console.log(error);
-
+        res.json({success:true,message:"Student deleted successfully."});
+    } catch(error) {
+        console.error("DELETE STUDENT ERROR:",error.message);
         res.status(500).json({
-            success: false,
-            message: "Could not delete student."
+            success:false,message:"Could not delete student."
         });
-
     }
-
 });
 
 // ================================
