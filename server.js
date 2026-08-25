@@ -1340,7 +1340,7 @@ app.post(
 // ADD STUDY MATERIAL
 // ================================
 
-app.post("/api/materials", requireAdmin, upload.single("file"), (req, res) => {
+app.post("/api/materials", requireAdmin, materialUpload.single("file"), (req, res) => {
 
     const {
         subjectId,
