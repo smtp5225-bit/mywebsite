@@ -6,6 +6,12 @@ const initSqlJs = require("sql.js");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const multer = require("multer");
+const { createClient } = require("@supabase/supabase-js");
+
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SECRET_KEY
+);
 
 const mailTransporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
@@ -62,6 +68,13 @@ const materialUpload = multer({
 });
 
 const app = express();
+app.disable("x-powered-by");
+app.use((req,res,next)=>{
+    res.setHeader("X-Content-Type-Options","nosniff");
+    res.setHeader("X-Frame-Options","SAMEORIGIN");
+    res.setHeader("Referrer-Policy","strict-origin-when-cross-origin");
+    next();
+});
 const PORT = process.env.PORT || 3000;
 
 const DB_FILE = path.join(__dirname, "studenthub.sqlite");
@@ -333,10 +346,26 @@ db.run(`
 `);
 
     db.run(`
-        INSERT OR REPLACE INTO admins (id, username, password)
-        VALUES (1, 'admin', 'Admin@12345')
-    `);
-saveDatabase();
+        INSERT OR IGNORE INTO admins (id, username, password)
+        VALUES (1, 'admin', ?)
+    `, [hashPassword('Admin@12345')]);
+
+    const adminRows = db.exec("SELECT id, password FROM admins");
+    if (adminRows.length && adminRows[0].values) {
+        for (const row of adminRows[0].values) {
+            const id = row[0];
+            const stored = String(row[1] || "");
+
+            if (!stored.includes(":")) {
+                db.run(
+                    "UPDATE admins SET password = ? WHERE id = ?",
+                    [hashPassword(stored), id]
+                );
+            }
+        }
+    }
+
+    saveDatabase();
     console.log("✅ Database ready");
 
 }
@@ -432,307 +461,98 @@ app.get("/api/me", (req, res) => {
 // SIGNUP
 // ================================
 
-app.post("/api/signup", (req, res) => {
+app.post("/api/signup", async (req, res) => {
+    let {name,email,phone,password,college,branch,year,semester,goal}=req.body;
 
-    let {
-        name,
-        email,
-        phone,
-        password,
-        college,
-        branch,
-        year,
-        semester,
-        goal
-    } = req.body;
+    name=String(name||"").trim();
+    email=normalizeEmail(email);
+    phone=normalizePhone(phone);
+    password=String(password||"");
+    college=String(college||"").trim();
+    branch=String(branch||"").trim();
+    year=String(year||"").trim();
+    semester=String(semester||"").trim();
+    goal=String(goal||"").trim();
 
-    name = String(name || "").trim();
-    email = normalizeEmail(email);
-    phone = normalizePhone(phone);
-    password = String(password || "");
+    if(!name||!email||!phone||!password||!college||!branch||!year||!semester||!goal)
+        return res.status(400).json({success:false,message:"All signup details are required."});
 
-    college = String(college || "").trim();
-    branch = String(branch || "").trim();
-    year = String(year || "").trim();
-    semester = String(semester || "").trim();
-    goal = String(goal || "").trim();
+    if(!/^[0-9]{10}$/.test(phone))
+        return res.status(400).json({success:false,message:"Phone number must be exactly 10 digits."});
 
-    // All signup details are required
-    if (!name || !email || !phone || !password ||
-        !college || !branch || !year || !semester || !goal) {
-        return res.status(400).json({
-            success: false,
-            message: "All signup details are required."
-        });
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+        return res.status(400).json({success:false,message:"Enter a valid email address."});
+
+    if(password.length<6)
+        return res.status(400).json({success:false,message:"Password must be at least 6 characters."});
+
+    try{
+        const {data:existing,error:checkError}=await supabase
+            .from("students").select("id").or(`email.eq.${email},phone.eq.${phone}`).limit(1);
+
+        if(checkError) throw checkError;
+
+        if(existing?.length)
+            return res.status(409).json({success:false,message:"This email or phone number is already registered."});
+
+        const {data:student,error}=await supabase.from("students").insert({
+            name,email,phone,password:hashPassword(password),
+            college,branch,year,semester,goal
+        }).select("id,name,email,phone,college,branch,year,semester,goal").single();
+
+        if(error) throw error;
+
+        req.session.studentId=student.id;
+
+        res.json({success:true,message:"Account created successfully 🎉",student});
+    }catch(error){
+        console.error("SUPABASE SIGNUP ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not create account."});
     }
+});
 
-    // Email OR phone required
-    if (!email && !phone) {
-        return res.status(400).json({
-            success: false,
-            message: "Enter at least an email or phone number."
-        });
-    }
+app.post("/api/login", async (req,res)=>{
+    const identifier=String(req.body.identifier||"").trim();
+    const password=String(req.body.password||"");
 
-    if (phone && !/^[0-9]{10}$/.test(phone)) {
-        return res.status(400).json({
-            success: false,
-            message: "Phone number must be exactly 10 digits."
-        });
-    }
+    if(!identifier||!password)
+        return res.status(400).json({success:false,message:"Email/phone and password are required."});
 
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return res.status(400).json({
-            success: false,
-            message: "Enter a valid email address."
-        });
-    }
+    try{
+        const email=normalizeEmail(identifier);
+        const phone=normalizePhone(identifier);
 
-    if (!name || !password || !college ||
-        !branch || !year || !semester) {
+        const {data:rows,error}=await supabase.from("students")
+            .select("id,name,email,phone,password,college,branch,year,semester,goal")
+            .or(`email.eq.${email},phone.eq.${phone}`).limit(1);
 
-        return res.status(400).json({
-            success: false,
-            message: "Please fill all required student details."
-        });
-    }
+        if(error) throw error;
 
-    if (password.length < 6) {
-        return res.status(400).json({
-            success: false,
-            message: "Password must be at least 6 characters."
-        });
-    }
+        const student=rows?.[0];
 
-    try {
+        if(!student || !verifyPassword(password,student.password))
+            return res.status(401).json({success:false,message:"Invalid email/phone or password."});
 
-        // Check email
-        if (email) {
-
-            const checkEmail = db.prepare(`
-                SELECT id FROM students
-                WHERE LOWER(email) = ?
-                LIMIT 1
-            `);
-
-            checkEmail.bind([email]);
-
-            if (checkEmail.step()) {
-                checkEmail.free();
-
-                return res.status(409).json({
-                    success: false,
-                    message: "This email is already registered."
-                });
-            }
-
-            checkEmail.free();
-        }
-
-        // Check phone
-        if (phone) {
-
-            const checkPhone = db.prepare(`
-                SELECT id FROM students
-                WHERE phone = ?
-                LIMIT 1
-            `);
-
-            checkPhone.bind([phone]);
-
-            if (checkPhone.step()) {
-                checkPhone.free();
-
-                return res.status(409).json({
-                    success: false,
-                    message: "This phone number is already registered."
-                });
-            }
-
-            checkPhone.free();
-        }
-
-        const statement = db.prepare(`
-            INSERT INTO students
-            (
-                name,
-                email,
-                phone,
-                password,
-                college,
-                branch,
-                year,
-                semester,
-                goal
-            )
-            VALUES (?,?,?,?,?,?,?,?,?)
-        `);
-
-        statement.bind([
-            name,
-            email || null,
-            phone || null,
-            hashPassword(password),
-            college,
-            branch,
-            year,
-            semester,
-            goal
-        ]);
-
-        statement.step();
-        statement.free();
-
-        saveDatabase();
+        delete student.password;
+        req.session.studentId=student.id;
 
         res.json({
-            success: true,
-            message: "Account created successfully 🎉"
+            success:true,
+            message:`Welcome ${student.name}! 👋`,
+            student
         });
-
-    } catch (error) {
-
-        console.log("SIGNUP ERROR:", error);
-
-        res.status(500).json({
-            success: false,
-            message: "Could not create account."
-        });
+    }catch(error){
+        console.error("SUPABASE LOGIN ERROR:",error.message);
+        res.status(500).json({success:false,message:"Could not login."});
     }
-
 });
 
-
-// ================================
-// LOGIN
-// ================================
-
-
-
-app.post("/api/login", (req, res) => {
-
-    const identifier =
-        String(req.body.identifier || "").trim();
-
-    const password =
-        String(req.body.password || "");
-
-    if (!identifier || !password) {
-
-        return res.status(400).json({
-            success: false,
-            message: "Email/phone and password are required."
-        });
-    }
-
-    const email =
-        normalizeEmail(identifier);
-
-    const phone =
-        normalizePhone(identifier);
-
-    const statement = db.prepare(`
-        SELECT
-            id,
-            name,
-            email,
-            phone,
-            password,
-            college,
-            branch,
-            year,
-            semester,
-            goal
-        FROM students
-        WHERE
-            LOWER(email) = ? OR phone = ?
-        LIMIT 1
-    `);
-
-    statement.bind([
-        email,
-        phone
-    ]);
-
-    if (!statement.step()) {
-
-        statement.free();
-
-        return res.status(401).json({
-            success: false,
-            message: "Invalid email/phone or password."
-        });
-    }
-
-    const student =
-        statement.getAsObject();
-
-    statement.free();
-
-    // Support both secure hashes and old plain-text passwords.
-    const isHashedPassword =
-        String(student.password || "").includes(":");
-
-    let passwordValid = false;
-
-    if (isHashedPassword) {
-
-        passwordValid =
-            verifyPassword(password, student.password);
-
-    } else {
-
-        // Legacy account: compare old plain-text password.
-        passwordValid =
-            student.password === password;
-
-        // Upgrade it immediately after successful login.
-        if (passwordValid) {
-
-            const upgrade = db.prepare(`
-                UPDATE students
-                SET password = ?
-                WHERE id = ?
-            `);
-
-            upgrade.bind([
-                hashPassword(password),
-                student.id
-            ]);
-
-            upgrade.step();
-            upgrade.free();
-
-            saveDatabase();
-        }
-    }
-
-    if (!passwordValid) {
-
-        return res.status(401).json({
-            success: false,
-            message: "Invalid email/phone or password."
-        });
-    }
-
-    delete student.password;
-
-    req.session.studentId = student.id;
-
-    res.json({
-        success: true,
-        message:
-            `Welcome ${student.name}! 👋`,
-        student
-    });
-
-});
-
-
-// ================================
 
 // ================================
 // FORGOT PASSWORD / OTP
+// ================================
+
+
 // ================================
 
 app.post("/api/forgot-password", async (req, res) => {
@@ -1658,7 +1478,25 @@ app.post("/api/career", (req, res) => {
 // ADMIN LOGIN
 // ================================
 
-app.post("/api/admin/login", (req, res) => {
+const adminLoginAttempts = new Map();
+
+function adminRateLimit(req, res, next) {
+    const key = req.ip || req.socket.remoteAddress || "unknown";
+    const now = Date.now();
+    const data = adminLoginAttempts.get(key) || { count: 0, blockedUntil: 0 };
+
+    if (data.blockedUntil > now) {
+        return res.status(429).json({
+            success: false,
+            message: "Too many login attempts. Try again later."
+        });
+    }
+
+    req.adminRateKey = key;
+    next();
+}
+
+app.post("/api/admin/login", adminRateLimit, (req, res) => {
 
     const {
         username,
@@ -1685,20 +1523,18 @@ app.post("/api/admin/login", (req, res) => {
 
             SELECT
                 id,
-                username
+                username,
+                password
 
             FROM admins
 
             WHERE username = ?
 
-            AND password = ?
-
         `);
 
 
         statement.bind([
-            username,
-            password
+            username
         ]);
 
 
@@ -1721,6 +1557,15 @@ app.post("/api/admin/login", (req, res) => {
             statement.getAsObject();
 
         statement.free();
+
+        if (!verifyPassword(password, admin.password)) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid admin username or password."
+            });
+        }
+
+        delete admin.password;
 
 req.session.adminId = admin.id;
 req.session.adminUsername = admin.username;

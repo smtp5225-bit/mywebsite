@@ -12,6 +12,8 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@supabase/server": "^1.4.1",
+    "@supabase/supabase-js": "^2.112.4",
     "express": "^5.2.1",
     "express-session": "^1.19.0",
     "multer": "^2.2.0",
