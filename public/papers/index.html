@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Previous Year Papers | Polytechnic Hub</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<main class="section">
+<h1>📚 Previous Year Papers</h1>
+<p>Select your branch</p>
+<div id="branches"></div>
+</main>
+<script>
+const branches=["CE","MT","RE","CSE","EE"];
+const box=document.getElementById("branches");
+branches.forEach(b=>{
+  const a=document.createElement("a");
+  a.href="branch.html?branch="+encodeURIComponent(b);
+  a.className="feature-card";
+  a.innerHTML="<h2>"+b+"</h2><p>Previous Year Papers</p>";
+  box.appendChild(a);
+});
+</script>
+</body>
+</html>
