@@ -311,6 +311,13 @@ function clearMessage() {
 // ===============================
 
 signupForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const submitBtn = signupForm.querySelector('button[type="submit"]');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Submitting...";
+    }
+
 
     event.preventDefault();
 
