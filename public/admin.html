@@ -363,24 +363,30 @@ async function api(url,options={}){
 
 async function loadAll(){
 
-    const [
-        subjects,
-        materials,
-        updates,
-        career
-    ] = await Promise.all([
-
-        api("/api/admin/subjects"),
-        api("/api/admin/materials"),
-        api("/api/admin/updates"),
-        api("/api/admin/career")
-
-    ]);
+    const subjects = await api("/api/admin/subjects");
 
     renderSubjects(subjects);
-    renderMaterials(materials);
-    renderUpdates(updates);
-    renderCareer(career);
+
+    try {
+        const materials = await api("/api/materials");
+        renderMaterials(materials);
+    } catch(e) {
+        console.error("Materials load error:", e);
+    }
+
+    try {
+        const updates = await api("/api/updates");
+        renderUpdates(updates);
+    } catch(e) {
+        console.error("Updates load error:", e);
+    }
+
+    try {
+        const career = await api("/api/career");
+        renderCareer(career);
+    } catch(e) {
+        console.error("Career load error:", e);
+    }
 }
 
 
