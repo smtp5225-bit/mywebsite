@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Polytechnic Hub</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+body{margin:0;background:#f5f7fb}
+.content-page{max-width:1000px;margin:auto;padding:25px 16px}
+.card{background:#fff;padding:18px;margin:14px 0;border-radius:16px;box-shadow:0 4px 16px #0001}
+.card h2{margin:0 0 8px}.meta{color:#666;font-size:14px}.btn{display:inline-block;margin-top:12px;padding:10px 16px;border-radius:10px;text-decoration:none}
+</style>
+</head>
+<body>
+<main class="content-page">
+<h1 id="title">Loading...</h1>
+<p id="info">Loading content...</p>
+<div id="items"></div>
+</main>
+
+<script>
+const params=new URLSearchParams(location.search);
+const category=params.get("category")||"notes";
+
+const names={
+ notes:"📚 Notes & Books",
+ previous_papers:"📝 Previous Year Papers",
+ models:"📄 Model Papers",
+ important:"⭐ Important Questions",
+ syllabus:"📖 Syllabus",
+ practical:"🧪 Practical & Viva"
+};
+
+document.getElementById("title").textContent=names[category]||"Study Content";
+
+async function load(){
+ try{
+  const r=await fetch("/api/content?category="+encodeURIComponent(category),{credentials:"include"});
+  const d=await r.json();
+  const box=document.getElementById("items");
+
+  if(!d.success){
+   box.innerHTML="<div class='card'><p>"+(d.message||"Unable to load content.")+"</p></div>";
+   return;
+  }
+
+  const items=d.content||[];
+  document.getElementById("info").textContent=
+    items.length+" content item"+(items.length===1?"":"s")+" available";
+
+  box.innerHTML=items.length ? items.map(x=>`
+   <div class="card">
+    <h2>📖 ${esc(x.title)}</h2>
+    <p>${esc(x.description||"")}</p>
+    <div class="meta">
+     ${esc(x.branch||"All Branches")} •
+     Semester ${esc(x.semester||"All")}
+    </div>
+    ${x.url?`<a class="btn primary" href="${esc(x.url)}" target="_blank" rel="noopener">Open Material</a>`:""}
+   </div>
+  `).join("") : `
+   <div class="card">
+    <h2>No content yet</h2>
+    <p>Admin se is section me content add karo.</p>
+   </div>`;
+ }catch(e){
+  document.getElementById("items").innerHTML=
+   "<div class='card'><p>Unable to connect to server.</p></div>";
+ }
+}
+
+function esc(v){
+ return String(v).replace(/[&<>"']/g,c=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+ }[c]));
+}
+load();
+</script>
+</body>
+</html>

@@ -293,7 +293,7 @@ body.auth-required nav {
 
     <!-- LIVE STUDY CONTENT -->
 
-    <div id="liveStudyContent" style="margin-top:30px;">
+    <div id="liveStudyContent" style="display:none;">
 
         <h3>📚 Available Subjects</h3>
 
@@ -743,11 +743,6 @@ body.auth-required nav {
             </div>
 
             <div class="record-item">
-                <span>📧 Email</span>
-                <strong id="recordEmail">—</strong>
-            </div>
-
-            <div class="record-item">
                 <span>🏫 College</span>
                 <strong id="recordCollege">—</strong>
             </div>
@@ -951,7 +946,7 @@ Create Account 🚀
 <input
 id="loginIdentifier"
 type="text"
-placeholder="Email or phone number"
+placeholder="Username"
 required
 >
 
@@ -983,9 +978,16 @@ Forgot Password?
 <form id="forgotForm" style="display:none">
 
 <input
-id="forgotIdentifier"
+id="forgotUsername"
 type="text"
-placeholder="Email or phone number"
+placeholder="Username"
+required
+>
+
+<input
+id="forgotEmail"
+type="email"
+placeholder="Registered email"
 required
 >
 

@@ -26,7 +26,18 @@ async function enforceAuthGate() {
     }
 }
 
-document.addEventListener("DOMContentLoaded", enforceAuthGate);
+document.addEventListener("DOMContentLoaded", async () => {
+    await enforceAuthGate();
+
+    const loggedIn = document.body.classList.contains("auth-required") === false;
+
+    if (loggedIn) {
+        localStorage.setItem("polytechnicLoggedIn", "true");
+        updateRecordNavigation();
+        updateDashboard();
+        updateProfileButton();
+    }
+});
 
 const $ = (selector) => document.querySelector(selector);
 
@@ -305,6 +316,7 @@ signupForm?.addEventListener("submit", async (event) => {
 
         name: $("#signupName").value.trim(),
 
+        username: $("#signupUsername").value.trim(),
         email: $("#signupEmail").value.trim(),
         phone: $("#signupPhone").value.trim(),
 
@@ -414,7 +426,7 @@ loginForm?.addEventListener("submit", async (event) => {
 
     const data = {
 
-        identifier: $("#loginIdentifier").value.trim(),
+        username: $("#loginIdentifier").value.trim(),
 
         password: $("#loginPassword").value
 
@@ -440,7 +452,7 @@ loginForm?.addEventListener("submit", async (event) => {
 
             showMessage(
                 result.message ||
-                "Invalid email or password.",
+                "Invalid username or password.",
                 "error"
             );
 
@@ -513,8 +525,11 @@ const otpForm =
 const resetForm =
     document.getElementById("resetForm");
 
-const forgotIdentifier =
-    document.getElementById("forgotIdentifier");
+const forgotUsername =
+    document.getElementById("forgotUsername");
+
+const forgotEmail =
+    document.getElementById("forgotEmail");
 
 const otpInput =
     document.getElementById("otpInput");
@@ -544,7 +559,7 @@ forgotPasswordBtn?.addEventListener("click", () => {
         "Reset your password 🔐";
 
     authSubtitle.textContent =
-        "Use your email or phone number.";
+        "Enter your username and registered email.";
 
     clearMessage();
 
@@ -557,12 +572,15 @@ forgotForm?.addEventListener("submit", async (event) => {
 
     event.preventDefault();
 
-    const identifier =
-        forgotIdentifier.value.trim();
+    const username =
+        forgotUsername.value.trim().toLowerCase();
 
-    if (!identifier) {
+    const email =
+        forgotEmail.value.trim().toLowerCase();
+
+    if (!username || !email) {
         showMessage(
-            "Enter your email or phone number.",
+            "Enter your username and registered email.",
             "error"
         );
         return;
@@ -580,7 +598,8 @@ forgotForm?.addEventListener("submit", async (event) => {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    identifier
+                    username,
+                    email
                 })
             }
         );
@@ -668,8 +687,11 @@ resetForm?.addEventListener("submit", async (event) => {
     const otp =
         otpInput.value.trim();
 
-    const identifier =
-        forgotIdentifier.value.trim();
+    const username =
+        forgotUsername.value.trim().toLowerCase();
+
+    const email =
+        forgotEmail.value.trim().toLowerCase();
 
     if (!password || !confirm) {
 
@@ -714,7 +736,8 @@ resetForm?.addEventListener("submit", async (event) => {
                         "application/json"
                 },
                 body: JSON.stringify({
-                    identifier,
+                    username,
+                    email,
                     otp,
                     newPassword: password
                 })
@@ -828,7 +851,16 @@ function updateDashboard() {
     loginBtn.textContent = "Logout";
 }
 
-function logout() {
+async function logout() {
+
+    try {
+        await fetch("/api/logout", {
+            method: "POST",
+            credentials: "same-origin"
+        });
+    } catch (error) {
+        console.error("Logout error:", error);
+    }
 
     localStorage.removeItem(
         "polytechnicLoggedIn"
@@ -1537,12 +1569,10 @@ myRecordsBtn?.addEventListener("click", () => {
     alert(
         "👤 My Records\n\n" +
         "Name: " + name + "\n" +
-        "Email: " + (profile.email || "N/A") + "\n" +
         "College: " + (profile.college || "N/A") + "\n" +
         "Branch: " + (profile.branch || "N/A") + "\n" +
         "Year: " + (profile.year || "N/A") + "\n" +
-        "Semester: " + (profile.semester || "N/A") + "\n" +
-        "Goal: " + (profile.goal || "Not decided")
+        "Semester: " + (profile.semester || "N/A")
     );
 
 });

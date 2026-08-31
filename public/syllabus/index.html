@@ -1,5 +1,5 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -8,79 +8,27 @@
 </head>
 <body>
 <main class="section">
+<a href="/" style="text-decoration:none;">← Back</a>
+<div class="section-title">
 <h1>📖 Syllabus</h1>
 <p>Branch and semester-wise syllabus</p>
-
-<div id="filters">
-<select id="branch">
-<option value="">All Branches</option>
-<option>CE</option><option>MT</option><option>RE</option>
-<option>CSE</option><option>EE</option>
-</select>
-
-<select id="semester">
-<option value="">All Semesters</option>
-<option value="1">Semester 1</option>
-<option value="2">Semester 2</option>
-<option value="3">Semester 3</option>
-<option value="4">Semester 4</option>
-<option value="5">Semester 5</option>
-<option value="6">Semester 6</option>
-</select>
 </div>
-
-<div id="content" class="feature-grid">
-<p>Loading...</p>
-</div>
+<div class="feature-grid" id="list"></div>
 </main>
 
 <script>
-const CATEGORY='Syllabus';
+const list=document.getElementById("list");
+const category='Syllabus';
 
-async function loadContent(){
- const box=document.getElementById("content");
- const branch=document.getElementById("branch").value;
- const semester=document.getElementById("semester").value;
-
- box.innerHTML="<p>Loading...</p>";
-
- try{
-   let url="/api/content?category="+encodeURIComponent(CATEGORY);
-   if(branch) url+="&branch="+encodeURIComponent(branch);
-   if(semester) url+="&semester="+encodeURIComponent(semester);
-
-   const r=await fetch(url);
-   const data=await r.json();
-
-   if(!data.success) throw new Error(data.message);
-
-   const items=(data.content||[]).filter(x =>
-      x.title &&
-      x.title !== CATEGORY
-   );
-
-   box.innerHTML=items.length ? items.map(x=>`
-     <div class="feature-card">
-       <div class="feature-icon">📚</div>
-       <h3>${x.title}</h3>
-       <p>${x.description||""}</p>
-       <small>
-         ${x.branch||"All Branches"} •
-         Semester ${x.semester||"All"}
-       </small>
-       ${x.url ? `<br><br><a class="btn primary" href="${x.url}" target="_blank" rel="noopener">Open Content</a>` : ""}
-     </div>
-   `).join("") : "<p>No content available yet.</p>";
-
- }catch(e){
-   console.error(e);
-   box.innerHTML="<p>Could not load content.</p>";
- }
+for(let i=1;i<=6;i++){
+  const a=document.createElement("a");
+  a.className="feature-card";
+  a.style.textDecoration="none";
+  a.style.color="inherit";
+  a.href="semester.html?category="+encodeURIComponent(category)+"&sem="+i;
+  a.innerHTML="<div class='feature-icon'>📚</div><h2>Semester "+i+"</h2><p>View Syllabus →</p>";
+  list.appendChild(a);
 }
-
-branch.addEventListener("change",loadContent);
-semester.addEventListener("change",loadContent);
-loadContent();
 </script>
 </body>
 </html>

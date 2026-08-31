@@ -1,3 +1,5 @@
+
+require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
 const path = require("path");
@@ -144,7 +146,7 @@ app.use(session({
     cookie: {
         httpOnly: true,
         sameSite: "lax",
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         path: "/",
         maxAge: 1000 * 60 * 60 * 4
     }
@@ -210,6 +212,9 @@ async function startDatabase() {
         db.exec(`PRAGMA table_info(students)`)[0]?.values
             .map(row => row[1]) || [];
 
+    if (!studentColumns.includes("username")) {
+        db.run(`ALTER TABLE students ADD COLUMN username TEXT`);
+    }
     if (!studentColumns.includes("phone")) {
         db.run(`ALTER TABLE students ADD COLUMN phone TEXT`);
     }
@@ -464,81 +469,187 @@ app.get("/api/me", (req, res) => {
     });
 });
 
+app.post("/api/logout", (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            return res.status(500).json({success:false,message:"Logout failed."});
+        }
+        res.clearCookie("connect.sid");
+        res.json({success:true,message:"Logged out successfully."});
+    });
+});
+
 // ================================
 // SIGNUP
 // ================================
 
 app.post("/api/signup", async (req, res) => {
-    let {name,email,phone,password,college,branch,year,semester,goal}=req.body;
+    let {
+        name, username, email, phone, password,
+        college, branch, year, semester, goal
+    } = req.body;
 
-    name=String(name||"").trim();
-    email=normalizeEmail(email);
-    phone=normalizePhone(phone);
-    password=String(password||"");
-    college=String(college||"").trim();
-    branch=String(branch||"").trim();
-    year=String(year||"").trim();
-    semester=String(semester||"").trim();
-    goal=String(goal||"").trim();
+    name = String(name || "").trim();
+    username = String(username || "").trim().toLowerCase();
+    email = normalizeEmail(email);
+    phone = normalizePhone(phone);
+    password = String(password || "");
+    college = String(college || "").trim();
+    branch = String(branch || "").trim();
+    year = String(year || "").trim();
+    semester = String(semester || "").trim();
+    goal = String(goal || "").trim();
 
-    if(!name||!email||!phone||!password||!college||!branch||!year||!semester||!goal)
-        return res.status(400).json({success:false,message:"All signup details are required."});
+    if (!name || !username || !email || !phone || !password ||
+        !college || !branch || !year || !semester || !goal) {
+        return res.status(400).json({
+            success: false,
+            message: "All signup details are required."
+        });
+    }
 
-    if(!/^[0-9]{10}$/.test(phone))
-        return res.status(400).json({success:false,message:"Phone number must be exactly 10 digits."});
+    if (!/^[a-z0-9_]{3,30}$/.test(username)) {
+        return res.status(400).json({
+            success: false,
+            message: "Username must be 3-30 characters (letters, numbers, underscore)."
+        });
+    }
 
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-        return res.status(400).json({success:false,message:"Enter a valid email address."});
+    if (!/^[0-9]{10}$/.test(phone)) {
+        return res.status(400).json({
+            success: false,
+            message: "Phone number must be exactly 10 digits."
+        });
+    }
 
-    if(password.length<6)
-        return res.status(400).json({success:false,message:"Password must be at least 6 characters."});
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({
+            success: false,
+            message: "Enter a valid email address."
+        });
+    }
 
-    try{
-        const {data:existing,error:checkError}=await supabase
-            .from("students").select("id").or(`email.eq.${email},phone.eq.${phone}`).limit(1);
+    if (password.length < 6) {
+        return res.status(400).json({
+            success: false,
+            message: "Password must be at least 6 characters."
+        });
+    }
 
-        if(checkError) throw checkError;
+    try {
+        const check = db.prepare(`
+            SELECT id
+            FROM students
+            WHERE LOWER(username) = ?
+               OR LOWER(email) = ?
+               OR phone = ?
+            LIMIT 1
+        `);
 
-        if(existing?.length)
-            return res.status(409).json({success:false,message:"This email or phone number is already registered."});
+        check.bind([username, email, phone]);
 
-        const {data:student,error}=await supabase.from("students").insert({
-            name,email,phone,password:hashPassword(password),
-            college,branch,year,semester,goal
-        }).select("id,name,email,phone,college,branch,year,semester,goal").single();
+        let exists = false;
 
-        if(error) throw error;
+        if (check.step()) {
+            exists = true;
+        }
 
-        req.session.studentId=student.id;
+        check.free();
 
-        res.json({success:true,message:"Account created successfully 🎉",student});
-    }catch(error){
-        console.error("SUPABASE SIGNUP ERROR:",error.message);
-        res.status(500).json({success:false,message:"Could not create account."});
+        if (exists) {
+            return res.status(409).json({
+                success: false,
+                message: "This username, email or phone number is already registered."
+            });
+        }
+
+        db.run(`
+            INSERT INTO students
+            (
+                name, username, email, phone, password,
+                college, branch, year, semester, goal
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+            name,
+            username,
+            email,
+            phone,
+            hashPassword(password),
+            college,
+            branch,
+            year,
+            semester,
+            goal
+        ]);
+
+        const idResult = db.exec(
+            "SELECT last_insert_rowid() AS id"
+        );
+
+        const id = idResult[0]?.values?.[0]?.[0];
+
+        saveDatabase();
+
+        const student = {
+            id,
+            name,
+            username,
+            email,
+            phone,
+            college,
+            branch,
+            year,
+            semester,
+            goal
+        };
+
+        req.session.studentId = id;
+
+        return res.json({
+            success: true,
+            message: "Account created successfully 🎉",
+            student
+        });
+
+    } catch (error) {
+        console.error("LOCAL SIGNUP ERROR:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Could not create account."
+        });
     }
 });
 
-app.post("/api/login", async (req,res)=>{
-    const identifier=String(req.body.identifier||"").trim();
+app.post("/api/login", (req,res)=>{
+    const username=String(req.body.username||"").trim().toLowerCase();
     const password=String(req.body.password||"");
 
-    if(!identifier||!password)
-        return res.status(400).json({success:false,message:"Email/phone and password are required."});
+    if(!username||!password)
+        return res.status(400).json({
+            success:false,
+            message:"Username and password are required."
+        });
 
     try{
-        const email=normalizeEmail(identifier);
-        const phone=normalizePhone(identifier);
+        const stmt=db.prepare(`
+            SELECT id,name,username,email,phone,password,college,branch,year,semester,goal
+            FROM students
+            WHERE LOWER(username)=?
+            LIMIT 1
+        `);
+        stmt.bind([username]);
 
-        const {data:rows,error}=await supabase.from("students")
-            .select("id,name,email,phone,password,college,branch,year,semester,goal")
-            .or(`email.eq.${email},phone.eq.${phone}`).limit(1);
-
-        if(error) throw error;
-
-        const student=rows?.[0];
+        let student=null;
+        if(stmt.step()) student=stmt.getAsObject();
+        stmt.free();
 
         if(!student || !verifyPassword(password,student.password))
-            return res.status(401).json({success:false,message:"Invalid email/phone or password."});
+            return res.status(401).json({
+                success:false,
+                message:"Invalid username or password."
+            });
 
         delete student.password;
         req.session.studentId=student.id;
@@ -549,13 +660,14 @@ app.post("/api/login", async (req,res)=>{
             student
         });
     }catch(error){
-        console.error("SUPABASE LOGIN ERROR:",error.message);
-        res.status(500).json({success:false,message:"Could not login."});
+        console.error("LOGIN ERROR:",error.message);
+        res.status(500).json({
+            success:false,
+            message:"Login failed. Please try again."
+        });
     }
-});
+});;
 
-
-// ================================
 // FORGOT PASSWORD / OTP
 // ================================
 
@@ -563,160 +675,66 @@ app.post("/api/login", async (req,res)=>{
 // ================================
 
 app.post("/api/forgot-password", async (req, res) => {
+    const username = String(req.body.username || "").trim().toLowerCase();
+    const email = normalizeEmail(req.body.email || "");
 
-    const identifier =
-        String(req.body.identifier || "").trim();
-
-    if (!identifier) {
+    if (!username || !email) {
         return res.status(400).json({
             success: false,
-            message: "Email or phone number is required."
-        });
-    }
-
-    const email = normalizeEmail(identifier);
-    const phone = normalizePhone(identifier);
-
-    const statement = db.prepare(`
-        SELECT id, email, phone
-        FROM students
-        WHERE LOWER(email) = ? OR phone = ?
-        LIMIT 1
-    `);
-
-    statement.bind([email, phone]);
-
-    if (!statement.step()) {
-        statement.free();
-
-        return res.status(404).json({
-            success: false,
-            message: "No account found with this email/phone."
-        });
-    }
-
-    const student = statement.getAsObject();
-    statement.free();
-
-    /*
-     * PHONE OTP
-     * 2Factor generates and sends the OTP.
-     */
-    if (student.phone && phone === normalizePhone(student.phone)) {
-
-        try {
-
-            const phoneNumber =
-                String(student.phone).replace(/\D/g, "");
-
-            const internationalPhone =
-                phoneNumber.startsWith("91")
-                    ? `+${phoneNumber}`
-                    : `+91${phoneNumber}`;
-
-            const url =
-                `https://2factor.in/API/V1/${process.env.TWOFACTOR_API_KEY}` +
-                `/SMS/${encodeURIComponent(internationalPhone)}` +
-                `/AUTOGEN/PolytechnicHubOTP`;
-
-            const response =
-                await fetch(url);
-
-            const result =
-                await response.json();
-
-            if (
-                !response.ok ||
-                result.Status !== "Success" ||
-                !result.Details
-            ) {
-                console.error(
-                    "2FACTOR SMS ERROR:",
-                    result
-                );
-
-                return res.status(500).json({
-                    success: false,
-                    message: "Could not send SMS OTP."
-                });
-            }
-
-            const update = db.prepare(`
-                UPDATE students
-                SET reset_otp = ?,
-                    reset_otp_expires = ?
-                WHERE id = ?
-            `);
-
-            update.bind([
-                String(result.Details),
-                Date.now() + (10 * 60 * 1000),
-                student.id
-            ]);
-
-            update.step();
-            update.free();
-
-            saveDatabase();
-
-            return res.json({
-                success: true,
-                message: "OTP sent to your registered phone number."
-            });
-
-        } catch (error) {
-
-            console.error(
-                "2FACTOR PHONE OTP ERROR:",
-                error
-            );
-
-            return res.status(500).json({
-                success: false,
-                message: "Could not send SMS OTP."
-            });
-        }
-    }
-
-    /*
-     * EMAIL OTP
-     * Existing Gmail flow.
-     */
-    const otp =
-        String(Math.floor(100000 + Math.random() * 900000));
-
-    const expires =
-        Date.now() + (10 * 60 * 1000);
-
-    const update = db.prepare(`
-        UPDATE students
-        SET reset_otp = ?,
-            reset_otp_expires = ?
-        WHERE id = ?
-    `);
-
-    update.bind([
-        otp,
-        expires,
-        student.id
-    ]);
-
-    update.step();
-    update.free();
-
-    saveDatabase();
-
-    if (!student.email) {
-        return res.status(400).json({
-            success: false,
-            message: "No email or phone OTP delivery is configured."
+            message: "Username and registered email are required."
         });
     }
 
     try {
+        const statement = db.prepare(`
+            SELECT id, username, email
+            FROM students
+            WHERE LOWER(username) = ? AND LOWER(email) = ?
+            LIMIT 1
+        `);
+
+        statement.bind([username, email]);
+
+        let student = null;
+
+        if (statement.step()) {
+            const row = statement.getAsObject();
+            student = row;
+        }
+
+        statement.free();
+
+        if (!student) {
+            return res.status(404).json({
+                success: false,
+                message: "Username and email do not match any account."
+            });
+        }
+
+        const otp =
+            String(Math.floor(100000 + Math.random() * 900000));
+
+        const expires =
+            Date.now() + (10 * 60 * 1000);
+
+        db.run(`
+            UPDATE students
+            SET reset_otp = ?,
+                reset_otp_expires = ?
+            WHERE id = ?
+        `, [otp, expires, student.id]);
+
+        saveDatabase();
+
+        if (!student.email) {
+            return res.status(400).json({
+                success: false,
+                message: "No registered email found."
+            });
+        }
 
         await mailTransporter.sendMail({
-            from: process.env.SMTP_USER,
+            from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
             to: student.email,
             subject: "Polytechnic Student Hub - Password Reset OTP",
             text:
@@ -725,46 +743,40 @@ app.post("/api/forgot-password", async (req, res) => {
                 `If you did not request this, you can ignore this email.`
         });
 
-        return res.json({
+        res.json({
             success: true,
             message: "OTP sent to your registered email."
         });
 
     } catch (error) {
-
-        console.error(
-            "PASSWORD RESET EMAIL ERROR:",
-            error
-        );
-
-        return res.status(500).json({
+        console.error("PASSWORD RESET EMAIL ERROR:", error);
+        res.status(500).json({
             success: false,
             message: "Could not send OTP email."
         });
     }
-
 });
 
-
-// ================================
 // VERIFY OTP + RESET PASSWORD
 // ================================
 
 app.post("/api/reset-password", async (req, res) => {
+    const username = String(req.body.username || "").trim().toLowerCase();
+    const email = normalizeEmail(req.body.email || "");
+    const otp = String(req.body.otp || "").trim();
+    const newPassword = String(req.body.newPassword || "");
 
-    const identifier =
-        String(req.body.identifier || "").trim();
-
-    const otp =
-        String(req.body.otp || "").trim();
-
-    const newPassword =
-        String(req.body.newPassword || "");
-
-    if (!identifier || !otp || !newPassword) {
+    if (!username || !email || !otp || !newPassword) {
         return res.status(400).json({
             success: false,
-            message: "All fields are required."
+            message: "Username, email, OTP and new password are required."
+        });
+    }
+
+    if (!/^\\d{6}$/.test(otp)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid OTP."
         });
     }
 
@@ -775,90 +787,29 @@ app.post("/api/reset-password", async (req, res) => {
         });
     }
 
-    const email = normalizeEmail(identifier);
-    const phone = normalizePhone(identifier);
+    try {
+        const statement = db.prepare(`
+            SELECT id, username, email, reset_otp, reset_otp_expires
+            FROM students
+            WHERE LOWER(username) = ? AND LOWER(email) = ?
+            LIMIT 1
+        `);
 
-    const statement = db.prepare(`
-        SELECT id, email, phone, reset_otp, reset_otp_expires
-        FROM students
-        WHERE LOWER(email) = ? OR phone = ?
-        LIMIT 1
-    `);
+        statement.bind([username, email]);
 
-    statement.bind([email, phone]);
-
-    if (!statement.step()) {
+        let student = null;
+        if (statement.step()) {
+            student = statement.getAsObject();
+        }
         statement.free();
 
-        return res.status(404).json({
-            success: false,
-            message: "Account not found."
-        });
-    }
-
-    const student = statement.getAsObject();
-    statement.free();
-
-    /*
-     * PHONE OTP
-     * reset_otp contains the 2Factor session ID.
-     */
-    if (
-        student.phone &&
-        phone === normalizePhone(student.phone)
-    ) {
-
-        if (
-            !student.reset_otp ||
-            Number(student.reset_otp_expires || 0) < Date.now()
-        ) {
-            return res.status(400).json({
+        if (!student) {
+            return res.status(404).json({
                 success: false,
-                message: "Invalid or expired OTP."
+                message: "Username and email do not match any account."
             });
         }
 
-        try {
-
-            const verifyUrl =
-                `https://2factor.in/API/V1/${process.env.TWOFACTOR_API_KEY}` +
-                `/SMS/VERIFY/${encodeURIComponent(student.reset_otp)}` +
-                `/${encodeURIComponent(otp)}`;
-
-            const response =
-                await fetch(verifyUrl);
-
-            const result =
-                await response.json();
-
-            if (
-                !response.ok ||
-                result.Status !== "Success"
-            ) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid or expired OTP."
-                });
-            }
-
-        } catch (error) {
-
-            console.error(
-                "2FACTOR OTP VERIFY ERROR:",
-                error
-            );
-
-            return res.status(500).json({
-                success: false,
-                message: "Could not verify SMS OTP."
-            });
-        }
-
-    } else {
-
-        /*
-         * EMAIL OTP
-         */
         if (
             String(student.reset_otp || "") !== otp ||
             Number(student.reset_otp_expires || 0) < Date.now()
@@ -868,40 +819,31 @@ app.post("/api/reset-password", async (req, res) => {
                 message: "Invalid or expired OTP."
             });
         }
+
+        db.run(`
+            UPDATE students
+            SET password = ?,
+                reset_otp = NULL,
+                reset_otp_expires = NULL
+            WHERE id = ?
+        `, [hashPassword(newPassword), student.id]);
+
+        saveDatabase();
+
+        res.json({
+            success: true,
+            message: "Password changed successfully. You can now login."
+        });
+
+    } catch (error) {
+        console.error("PASSWORD RESET ERROR:", error);
+        res.status(500).json({
+            success: false,
+            message: "Could not reset password."
+        });
     }
-
-    const update = db.prepare(`
-        UPDATE students
-        SET password = ?,
-            reset_otp = NULL,
-            reset_otp_expires = NULL
-        WHERE id = ?
-    `);
-
-    update.bind([
-        hashPassword(newPassword),
-        student.id
-    ]);
-
-    update.step();
-    update.free();
-
-    saveDatabase();
-
-    return res.json({
-        success: true,
-        message: "Password reset successfully."
-    });
-
 });
 
-
-
-// ================================
-
-// ================================
-// FEEDBACK
-// ================================
 
 app.post("/api/feedback", async (req,res) => {
     const {studentId,college,branch,year,semester,used,suggestion}=req.body;
@@ -930,6 +872,14 @@ app.post("/api/feedback", async (req,res) => {
         res.status(500).json({success:false,message:"Could not save feedback."});
     }
 });
+
+function requireStudent(req,res,next){
+    if(req.session && req.session.studentId) return next();
+    return res.status(401).json({
+        success:false,
+        message:"Student login required."
+    });
+}
 
 // ================================
 // STUDY HUB APIs
@@ -1098,22 +1048,24 @@ app.post("/api/materials", requireAdmin, materialUpload.single("file"), async (r
     try {
         let uploadedUrl=url || "";
 
-        if(req.file) uploadedUrl=await uploadToSupabase(req.file);
+        if(req.file) uploadedUrl="/uploads/"+req.file.filename;
 
         const id=await nextId("study_materials");
 
-        const {error}=await supabase.from("study_materials").insert({
+        db.run(`INSERT INTO study_materials
+            (id,subject_id,title,description,type,url,branch,semester,category)
+            VALUES (?,?,?,?,?,?,?,?,?)`, [[
             id,
-            subject_id:subjectId ? Number(subjectId) : null,
+            subjectId ? Number(subjectId) : null,
             title,
-            description:description || "",
-            type:type || "",
-            url:uploadedUrl,
-            branch:branch || "",
-            semester:semester || ""
-        });
-
-        if(error) throw error;
+            description || "",
+            type || "",
+            uploadedUrl,
+            branch || "",
+            semester || "",
+            type || "notes"
+        ]]);
+        fs.writeFileSync(DB_FILE, Buffer.from(db.export()));
 
         res.json({
             success:true,
@@ -1133,40 +1085,25 @@ app.post("/api/materials", requireAdmin, materialUpload.single("file"), async (r
 
 app.get("/api/updates", requireStudent, async (req,res) => {
     try {
-        const {data,error}=await supabase
-            .from("updates")
-            .select("*")
-            .order("important",{ascending:false})
-            .order("created_at",{ascending:false});
-
-        if(error) throw error;
-        res.json({success:true,updates:data || []});
+        const result=db.exec("SELECT * FROM updates ORDER BY important DESC, id DESC");
+        const columns=result[0]?.columns || [];
+        const values=result[0]?.values || [];
+        const updates=values.map(row=>Object.fromEntries(columns.map((c,i)=>[c,row[i]])));
+        res.json({success:true,updates});
     } catch(error) {
         console.error("UPDATES ERROR:",error.message);
         res.status(500).json({success:false,message:"Could not load updates."});
     }
 });
 
-app.post("/api/updates", async (req,res) => {
+app.post("/api/updates", requireAdmin, async (req,res) => {
     const {title,description,type,important}=req.body;
-
-    if(!title) return res.status(400).json({
-        success:false,message:"Update title is required."
-    });
-
+    if(!title) return res.status(400).json({success:false,message:"Update title is required."});
     try {
         const id=await nextId("updates");
-
-        const {error}=await supabase.from("updates").insert({
-            id,
-            title,
-            description:description || "",
-            type:type || "General",
-            important:important ? 1 : 0
-        });
-
-        if(error) throw error;
-
+        db.run("INSERT INTO updates (id,title,description,type,important) VALUES (?,?,?,?,?)",
+            [[id,title,description||"",type||"General",important?1:0]]);
+        fs.writeFileSync(DB_FILE,Buffer.from(db.export()));
         res.json({success:true,message:"Update added successfully."});
     } catch(error) {
         console.error("ADD UPDATE ERROR:",error.message);
@@ -1180,41 +1117,25 @@ app.post("/api/updates", async (req,res) => {
 
 app.get("/api/career", requireStudent, async (req,res) => {
     try {
-        const {data,error}=await supabase
-            .from("career_posts")
-            .select("*")
-            .order("created_at",{ascending:false});
-
-        if(error) throw error;
-        res.json({success:true,career:data || []});
+        const result=db.exec("SELECT * FROM career_posts ORDER BY id DESC");
+        const columns=result[0]?.columns || [];
+        const values=result[0]?.values || [];
+        const career=values.map(row=>Object.fromEntries(columns.map((c,i)=>[c,row[i]])));
+        res.json({success:true,career});
     } catch(error) {
         console.error("CAREER ERROR:",error.message);
         res.status(500).json({success:false,message:"Could not load career posts."});
     }
 });
 
-app.post("/api/career", async (req,res) => {
+app.post("/api/career", requireAdmin, async (req,res) => {
     const {title,description,company,location,type,url}=req.body;
-
-    if(!title) return res.status(400).json({
-        success:false,message:"Career title is required."
-    });
-
+    if(!title) return res.status(400).json({success:false,message:"Career title is required."});
     try {
         const id=await nextId("career_posts");
-
-        const {error}=await supabase.from("career_posts").insert({
-            id,
-            title,
-            description:description || "",
-            company:company || "",
-            location:location || "",
-            type:type || "Opportunity",
-            url:url || ""
-        });
-
-        if(error) throw error;
-
+        db.run("INSERT INTO career_posts (id,title,description,company,location,type,url) VALUES (?,?,?,?,?,?,?)",
+            [[id,title,description||"",company||"",location||"",type||"Opportunity",url||""]]);
+        fs.writeFileSync(DB_FILE,Buffer.from(db.export()));
         res.json({success:true,message:"Career post added successfully."});
     } catch(error) {
         console.error("ADD CAREER ERROR:",error.message);
@@ -1222,101 +1143,8 @@ app.post("/api/career", async (req,res) => {
     }
 });
 
-// ================================
-// ADMIN LOGIN
-// ================================
-
-const adminLoginAttempts = new Map();
-
-function adminRateLimit(req,res,next) {
-    const key=req.ip || req.socket.remoteAddress || "unknown";
-    const now=Date.now();
-    const data=adminLoginAttempts.get(key) || {count:0,blockedUntil:0};
-
-    if(data.blockedUntil>now) return res.status(429).json({
-        success:false,message:"Too many login attempts. Try again later."
-    });
-
-    req.adminRateKey=key;
-    next();
-}
-
-app.post("/api/admin/login",adminRateLimit,async (req,res)=>{
-    const {username,password}=req.body;
-
-    if(!username || !password){
-        return res.status(400).json({
-            success:false,
-            message:"Username and password are required."
-        });
-    }
-
-    try{
-        const rows=db.exec(
-            "SELECT id,username,password FROM admins WHERE username = ?",
-            [username]
-        );
-
-        const values=rows[0]?.values || [];
-        const row=values[0];
-
-        if(!row || !verifyPassword(password,String(row[2] || ""))){
-            return res.status(401).json({
-                success:false,
-                message:"Invalid admin username or password."
-            });
-        }
-
-        req.session.adminId=row[0];
-        req.session.adminUsername=row[1];
-
-        req.session.save((saveError)=>{
-            if(saveError){
-                console.error("ADMIN SESSION SAVE ERROR:",saveError.message);
-                return res.status(500).json({
-                    success:false,
-                    message:"Could not save admin session."
-                });
-            }
-
-            res.json({
-                success:true,
-                message:"Admin login successful.",
-                admin:{
-                    id:row[0],
-                    username:row[1]
-                }
-            });
-        });
-
-    }catch(error){
-        console.error("ADMIN LOGIN ERROR:",error.message);
-        res.status(500).json({
-            success:false,
-            message:"Admin login failed."
-        });
-    }
-});
-
-
-function requireStudent(req,res,next) {
-    if(!req.session.userId && !req.session.studentId) {
-        return res.status(401).json({
-            success:false,message:"Student login required."
-        });
-    }
-    next();
-}
-
-function requireAdmin(req,res,next) {
-    if(req.session.adminId) return next();
-
-    if(req.cookies && req.cookies.admin_auth === "1") {
-        req.session.adminId = 1;
-        req.session.adminUsername = "admin";
-        return next();
-    }
-
+function requireAdmin(req,res,next){
+    if(req.session && req.session.adminId) return next();
     return res.status(401).json({
         success:false,
         message:"Admin login required."
@@ -1332,8 +1160,8 @@ app.delete("/api/admin/subjects/:id",requireAdmin,async(req,res)=>{
         const id=Number(req.params.id);
         if(!id) return res.status(400).json({success:false,message:"Invalid subject ID."});
 
-        const {error}=await supabase.from("subjects").delete().eq("id",id);
-        if(error) throw error;
+        db.run("DELETE FROM subjects WHERE id=?", [[id]]);
+        fs.writeFileSync(DB_FILE, Buffer.from(db.export()));
 
         res.json({success:true,message:"Subject deleted successfully."});
     } catch(error) {
@@ -1347,16 +1175,8 @@ app.delete("/api/admin/materials/:id",requireAdmin,async(req,res)=>{
         const id=Number(req.params.id);
         if(!id) return res.status(400).json({success:false,message:"Invalid material ID."});
 
-        const {data:material,error:findError}=await supabase
-            .from("study_materials")
-            .select("url")
-            .eq("id",id)
-            .maybeSingle();
-
-        if(findError) throw findError;
-
-        const {error}=await supabase.from("study_materials").delete().eq("id",id);
-        if(error) throw error;
+        db.run("DELETE FROM study_materials WHERE id=?", [[id]]);
+        fs.writeFileSync(DB_FILE, Buffer.from(db.export()));
 
         res.json({success:true,message:"Study material deleted successfully."});
     } catch(error) {
@@ -1370,8 +1190,8 @@ app.delete("/api/admin/updates/:id",requireAdmin,async(req,res)=>{
         const id=Number(req.params.id);
         if(!id) return res.status(400).json({success:false,message:"Invalid update ID."});
 
-        const {error}=await supabase.from("updates").delete().eq("id",id);
-        if(error) throw error;
+        db.run("DELETE FROM updates WHERE id=?", [[id]]);
+        fs.writeFileSync(DB_FILE, Buffer.from(db.export()));
 
         res.json({success:true,message:"Update deleted successfully."});
     } catch(error) {
@@ -1385,8 +1205,8 @@ app.delete("/api/admin/career/:id",requireAdmin,async(req,res)=>{
         const id=Number(req.params.id);
         if(!id) return res.status(400).json({success:false,message:"Invalid career post ID."});
 
-        const {error}=await supabase.from("career_posts").delete().eq("id",id);
-        if(error) throw error;
+        db.run("DELETE FROM career_posts WHERE id=?", [[id]]);
+        fs.writeFileSync(DB_FILE, Buffer.from(db.export()));
 
         res.json({success:true,message:"Career post deleted successfully."});
     } catch(error) {
@@ -1436,8 +1256,8 @@ app.delete("/api/admin/students/:id",requireAdmin,async(req,res)=>{
             success:false,message:"Invalid student ID."
         });
 
-        const {error}=await supabase.from("students").delete().eq("id",id);
-        if(error) throw error;
+        db.run("DELETE FROM students WHERE id=?", [[id]]);
+        fs.writeFileSync(DB_FILE, Buffer.from(db.export()));
 
         res.json({success:true,message:"Student deleted successfully."});
     } catch(error) {

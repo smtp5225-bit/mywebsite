@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Semester {sem} | Polytechnic Hub</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<main class="section">
+<a href="index.html" style="text-decoration:none;">← Back</a>
+<div class="section-title">
+<h1 id="title">Semester {sem}</h1>
+<p>Select a subject</p>
+</div>
+<div class="feature-grid" id="list"></div>
+</main>
+<script>
+const p=new URLSearchParams(location.search);
+const category=p.get("category") || "";
+const sem=p.get("sem") || "{sem}";
+const subjects=["Engineering Mathematics","English","Engineering Physics","Engineering Chemistry","Computer Fundamentals","Workshop / Practical"];
+const list=document.getElementById("list");
+subjects.forEach(subject=>{
+ const a=document.createElement("a");
+ a.className="feature-card";
+ a.style.textDecoration="none";
+ a.style.color="inherit";
+ a.href="../content.html?category="+encodeURIComponent(category)+"&sem="+encodeURIComponent(sem)+"&subject="+encodeURIComponent(subject);
+ a.innerHTML="<div class='feature-icon'>📘</div><h2>"+subject+"</h2><p>Open "+category+" →</p>";
+ list.appendChild(a);
+});
+</script>
+</body>
+</html>
