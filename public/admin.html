@@ -372,21 +372,21 @@ async function loadAll(){
     }
 
     try {
-        const materials = await api("/api/materials");
+        const materials = await api("/api/admin/materials");
         renderMaterials(materials);
     } catch(e) {
         console.error("Materials load error:", e);
     }
 
     try {
-        const updates = await api("/api/updates");
+        const updates = await api("/api/admin/updates");
         renderUpdates(updates);
     } catch(e) {
         console.error("Updates load error:", e);
     }
 
     try {
-        const career = await api("/api/career");
+        const career = await api("/api/admin/career");
         renderCareer(career);
     } catch(e) {
         console.error("Career load error:", e);
@@ -398,7 +398,7 @@ async function loadAll(){
 
 async function addSubject(){
 
-    const data = await api("/api/subjects",{
+    const data = await api("/api/admin/subjects",{
         method:"POST",
         headers:{
             "Content-Type":"application/json"
@@ -610,7 +610,7 @@ function renderMaterials(data){
 
 async function addUpdate(){
 
-    const data=await api("/api/updates",{
+    const data=await api("/api/admin/updates",{
         method:"POST",
         headers:{
             "Content-Type":"application/json"
@@ -672,7 +672,7 @@ function renderUpdates(data){
 
 async function addCareer(){
 
-    const data=await api("/api/career",{
+    const data=await api("/api/admin/career",{
         method:"POST",
         headers:{
             "Content-Type":"application/json"
