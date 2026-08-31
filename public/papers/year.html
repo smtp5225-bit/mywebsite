@@ -1,1 +1,80 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Papers</title><link rel="stylesheet" href="../style.css"></head><body><main class="section"><h1 id="title"></h1><div id="list"></div></main><script>const p=new URLSearchParams(location.search),b=p.get("branch"),s=p.get("sem"),sub=p.get("subject");document.getElementById("title").textContent=sub+" — Previous Papers";[2025,2024,2023,2022,2021,2020].forEach(y=>list.innerHTML+=`<div class="feature-card"><h2>${y}</h2><p>Paper not uploaded yet</p></div>`)</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Previous Papers | Polytechnic Hub</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+<main class="section">
+
+<h1 id="title">Previous Year Papers</h1>
+<p>Select examination year</p>
+
+<div id="list" class="feature-grid"></div>
+
+</main>
+
+<script>
+const p = new URLSearchParams(location.search);
+
+const branch = p.get("branch") || "CE";
+const sem = p.get("sem") || "1";
+const subject = p.get("subject") || "Subject";
+
+document.getElementById("title").textContent =
+    subject + " — Previous Year Papers";
+
+const list = document.getElementById("list");
+
+const papers = [
+    {year:"2025", url:""},
+    {year:"2024", url:""},
+    {year:"2023", url:""},
+    {year:"2022", url:""},
+    {year:"2021", url:""},
+    {year:"2020", url:""}
+];
+
+papers.forEach(paper => {
+
+    const card = document.createElement("div");
+    card.className = "feature-card";
+
+    card.innerHTML = `
+        <div class="feature-icon">📝</div>
+        <h2>${paper.year}</h2>
+        <p>${branch} • Semester ${sem}</p>
+
+        ${
+            paper.url
+            ? `
+                <a href="${paper.url}"
+                   target="_blank"
+                   rel="noopener"
+                   class="btn primary">
+                   📖 Open PDF
+                </a>
+
+                <a href="${paper.url}"
+                   download
+                   class="btn">
+                   ⬇️ Download
+                </a>
+            `
+            : `
+                <p style="opacity:.7;">
+                    PDF not uploaded yet
+                </p>
+            `
+        }
+    `;
+
+    list.appendChild(card);
+});
+</script>
+
+</body>
+</html>

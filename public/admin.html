@@ -281,47 +281,67 @@ textarea{min-height:90px}
 <script>
 
 async function login(){
+    const username=document.getElementById("username").value.trim();
+    const password=document.getElementById("password").value;
+    const message=document.getElementById("message");
 
-    const username =
-        document.getElementById("username").value;
+    if(!username || !password){
+        message.textContent="Username and password required.";
+        return;
+    }
 
-    const password =
-        document.getElementById("password").value;
+    try{
+        const res=await fetch("/api/admin/login",{
+            method:"POST",
+            credentials:"same-origin",
+            headers:{
+                "Content-Type":"application/json"
+            },
+            body:JSON.stringify({
+                username,
+                password
+            })
+        });
 
-    const res = await fetch("/api/admin/login",{
-        method:"POST",
-        headers:{
-            "Content-Type":"application/json"
-        },
-        credentials:"include",
-        body:JSON.stringify({
-            username,
-            password
-        })
-    });
+        const data=await res.json();
 
-    const data = await res.json();
+        console.log("ADMIN LOGIN RESPONSE:",data);
 
-    document.getElementById("message").textContent =
-        data.message;
+        if(data.success===true){
+            message.textContent="Login successful.";
 
-    if(data.success){
+            document.getElementById("loginBox").classList.add("hidden");
+            document.getElementById("dashboard").classList.remove("hidden");
 
-        document
-        .getElementById("loginBox")
-        .classList.add("hidden");
+            // Dashboard loading errors should NOT make login look invalid
+            try{
+                await loadAll();
+            }catch(error){
+                console.error("LOAD ALL ERROR:",error);
+            }
 
-        document
-        .getElementById("dashboard")
-        .classList.remove("hidden");
+            try{
+                await loadStudents();
+            }catch(error){
+                console.error("LOAD STUDENTS ERROR:",error);
+            }
 
-        await loadAll();
-        await loadStudents();
-        await loadFeedback();
+            try{
+                await loadFeedback();
+            }catch(error){
+                console.error("LOAD FEEDBACK ERROR:",error);
+            }
 
+            return;
+        }
+
+        message.textContent=data.message || "Invalid username or password.";
+
+    }catch(error){
+        console.error("ADMIN LOGIN ERROR:",error);
+        message.textContent="Server connection failed.";
     }
 }
-
 
 function logout(){
 

@@ -1,1 +1,53 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Subjects</title><link rel="stylesheet" href="../style.css"></head><body><main class="section"><h1 id="title"></h1><div id="list"></div></main><script>const p=new URLSearchParams(location.search),b=p.get("branch"),s=p.get("sem"),subjects=["Engineering Mathematics","Applied Physics","Applied Chemistry","Communication Skills","Computer Fundamentals"];document.getElementById("title").textContent=b+" — Semester "+s+" — Subjects";subjects.forEach(x=>list.innerHTML+=`<a class="feature-card" href="year.html?branch=${encodeURIComponent(b)}&sem=${s}&subject=${encodeURIComponent(x)}"><h2>${x}</h2><p>View papers</p></a>`)</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Subjects | Polytechnic Hub</title>
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<main class="section">
+<h1 id="title">Subjects</h1>
+<p>Select a subject</p>
+<div id="list" class="feature-grid"></div>
+</main>
+
+<script>
+const p = new URLSearchParams(location.search);
+const branch = p.get("branch") || "CE";
+const sem = p.get("sem") || "1";
+
+const subjects = [
+  "Engineering Mathematics",
+  "Applied Physics",
+  "Applied Chemistry",
+  "Communication Skills",
+  "Computer Fundamentals"
+];
+
+document.getElementById("title").textContent =
+  branch + " — Semester " + sem + " — Subjects";
+
+const list = document.getElementById("list");
+
+subjects.forEach(subject => {
+  const a = document.createElement("a");
+  a.className = "feature-card";
+  a.style.textDecoration = "none";
+  a.style.color = "inherit";
+  a.href =
+    "year.html?branch=" + encodeURIComponent(branch) +
+    "&sem=" + encodeURIComponent(sem) +
+    "&subject=" + encodeURIComponent(subject);
+
+  a.innerHTML =
+    "<div class='feature-icon'>📚</div>" +
+    "<h2>" + subject + "</h2>" +
+    "<p>View Previous Year Papers →</p>";
+
+  list.appendChild(a);
+});
+</script>
+</body>
+</html>

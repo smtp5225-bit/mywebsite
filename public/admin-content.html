@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Content Manager | Polytechnic Hub</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.manager{max-width:900px;margin:auto}
+.panel{padding:20px;margin:20px 0;border-radius:16px;background:#fff;box-shadow:0 4px 18px #0001}
+input,select,textarea{width:100%;box-sizing:border-box;padding:12px;margin:6px 0 12px;border:1px solid #ddd;border-radius:10px}
+button{padding:10px 16px;border:0;border-radius:10px;cursor:pointer;margin:4px}
+.item{border:1px solid #ddd;border-radius:12px;padding:15px;margin:10px 0}
+</style>
+</head>
+
+<body>
+<main class="section manager">
+
+<h1>🛠️ Content Manager</h1>
+<p>Add, edit and delete content from all 6 Study Hub sections.</p>
+
+<div class="panel">
+
+<label>Category</label>
+<select id="category">
+<option value="Notes & Books">📚 Notes & Books</option>
+<option value="Previous Papers">📝 Previous Year Papers</option>
+<option value="Model Papers">📄 Model Papers</option>
+<option value="Important Questions">⭐ Important Questions</option>
+<option value="Syllabus">📖 Syllabus</option>
+<option value="Practical & Viva">🧪 Practical & Viva</option>
+</select>
+
+<input id="title" placeholder="Title / Paper name">
+<textarea id="description" placeholder="Description"></textarea>
+<input id="branch" placeholder="Branch e.g. CE">
+<input id="semester" placeholder="Semester e.g. 1">
+
+<label>Subject</label>
+<select id="subjectId">
+    <option value="">-- Select Subject (optional) --</option>
+</select>
+<input id="url" placeholder="PDF / Material URL">
+
+<button onclick="addContent()">➕ Add Content</button>
+<button onclick="loadContent()">🔄 Refresh</button>
+
+</div>
+
+<div class="panel">
+<h2>📚 Existing Content</h2>
+<div id="items">Loading...</div>
+</div>
+
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+
+async function loadSubjects(){
+    const select=$("subjectId");
+
+    if(!select) return;
+
+    select.innerHTML='<option value="">-- Select Subject (Optional) --</option>';
+
+    try{
+        const r=await fetch("/api/admin/subjects",{credentials:"include"});
+        const d=await r.json();
+
+        if(!d.success){
+            console.error("SUBJECT LOAD ERROR:",d.message);
+            return;
+        }
+
+        (d.subjects||[]).forEach(x=>{
+            const option=document.createElement("option");
+            option.value=x.id;
+            option.textContent=
+                `${x.name} • ${x.branch||"All"} • Semester ${x.semester||"All"}`;
+            select.appendChild(option);
+        });
+
+    }catch(e){
+        console.error("SUBJECT LOAD ERROR:",e);
+    }
+}
+
+async function loadContent(){
+    const cat=$("category").value;
+
+    try{
+        const r=await fetch("/api/content?category="+encodeURIComponent(cat));
+        const d=await r.json();
+
+        if(!d.success) throw new Error(d.message||"Failed");
+
+        const items=d.content||[];
+
+        $("items").innerHTML=items.length
+        ? items.map(x=>`
+            <div class="item">
+                <h3>${esc(x.title)}</h3>
+                <p>${esc(x.description||"")}</p>
+                <small>
+                    ${esc(x.branch||"All Branches")}
+                    • Semester ${esc(x.semester||"All")}
+                    ${x.subject_name ? " • "+esc(x.subject_name) : ""}
+                </small>
+                <br><br>
+                ${x.url
+                    ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">📖 Open</a>`
+                    : ""}
+                <br>
+                <button onclick="editContent(${x.id})">✏️ Edit</button>
+                <button onclick="deleteContent(${x.id})">🗑️ Delete</button>
+            </div>
+        `).join("")
+        : "<p>No content added yet.</p>";
+
+    }catch(e){
+        $("items").innerHTML="<p>Unable to load content.</p>";
+    }
+}
+
+async function addContent(){
+
+    const body={
+        category:$("category").value,
+        title:$("title").value.trim(),
+        description:$("description").value.trim(),
+        branch:$("branch").value.trim(),
+        semester:$("semester").value.trim(),
+        subject_id:$("subjectId").value.trim(),
+        url:$("url").value.trim()
+    };
+
+    if(!body.title){
+        alert("Title required");
+        return;
+    }
+
+    const r=await fetch("/api/admin/content",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(body)
+    });
+
+    const d=await r.json();
+
+    alert(d.message||"Done");
+
+    if(d.success){
+        $("title").value="";
+        $("description").value="";
+        $("branch").value="";
+        $("semester").value="";
+        $("subjectId").value="";
+        $("url").value="";
+        loadContent();
+    }
+}
+
+async function editContent(id){
+
+    const title=prompt("New title:");
+    if(title===null || !title.trim()) return;
+
+    const description=prompt("New description:")||"";
+    const url=prompt("New PDF / URL:")||"";
+
+    const r=await fetch("/api/admin/content/"+id,{
+        method:"PUT",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            category:$("category").value,
+            title:title.trim(),
+            description,
+            url,
+            branch:$("branch").value.trim(),
+            semester:$("semester").value.trim(),
+            subject_id:$("subjectId").value.trim()
+        })
+    });
+
+    const d=await r.json();
+    alert(d.message||"Done");
+    loadContent();
+}
+
+async function deleteContent(id){
+
+    if(!confirm("Delete this content permanently?")) return;
+
+    const r=await fetch("/api/admin/content/"+id,{
+        method:"DELETE"
+    });
+
+    const d=await r.json();
+    alert(d.message||"Done");
+    loadContent();
+}
+
+function esc(v){
+    return String(v).replace(/[&<>"']/g,c=>({
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#039;"
+    }[c]));
+}
+
+$("category").addEventListener("change",loadContent);
+loadSubjects();
+loadContent();
+</script>
+</body>
+</html>
