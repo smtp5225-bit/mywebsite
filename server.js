@@ -135,6 +135,7 @@ function verifyPassword(password, storedPassword) {
 let db;
 
 // JSON requests
+app.set("trust proxy", 1);
 app.use(express.json());
 app.use(session({
     secret: process.env.SESSION_SECRET || "polytechnic-hub-change-this-secret",
@@ -143,7 +144,7 @@ app.use(session({
     cookie: {
         httpOnly: true,
         sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
         path: "/",
         maxAge: 1000 * 60 * 60 * 4
     }
