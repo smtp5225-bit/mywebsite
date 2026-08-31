@@ -370,7 +370,7 @@ async function loadAll(){
         career
     ] = await Promise.all([
 
-        api("/api/subjects"),
+        api("/api/admin/subjects"),
         api("/api/materials"),
         api("/api/updates"),
         api("/api/career")
