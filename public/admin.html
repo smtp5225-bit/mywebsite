@@ -363,9 +363,13 @@ async function api(url,options={}){
 
 async function loadAll(){
 
-    const subjects = await api("/api/admin/subjects");
-
-    renderSubjects(subjects);
+    try {
+        const subjects = await api("/api/admin/subjects");
+        renderSubjects(subjects);
+    } catch(e) {
+        console.error("Subjects load error:", e);
+        document.getElementById("subjectCount").textContent = "0";
+    }
 
     try {
         const materials = await api("/api/materials");
