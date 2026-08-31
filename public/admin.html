@@ -371,9 +371,9 @@ async function loadAll(){
     ] = await Promise.all([
 
         api("/api/admin/subjects"),
-        api("/api/materials"),
-        api("/api/updates"),
-        api("/api/career")
+        api("/api/admin/materials"),
+        api("/api/admin/updates"),
+        api("/api/admin/career")
 
     ]);
 
