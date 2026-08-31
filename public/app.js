@@ -33,6 +33,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (loggedIn) {
         localStorage.setItem("polytechnicLoggedIn", "true");
+        if (signupForm) signupForm.style.display = "none";
+        if (loginForm) loginForm.style.display = "none";
+        if (otpForm) otpForm.style.display = "none";
+        if (loginBtn) loginBtn.style.display = "none";
         updateRecordNavigation();
         updateDashboard();
         updateProfileButton();
